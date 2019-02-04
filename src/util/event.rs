@@ -1,3 +1,5 @@
+#![allow(warnings)]
+
 use std::io;
 use std::sync::mpsc;
 use std::thread;

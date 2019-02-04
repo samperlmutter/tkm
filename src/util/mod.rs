@@ -1,3 +1,5 @@
+#![allow(warnings)]
+
 pub mod event;
 
 use rand::distributions::{Distribution, Uniform};

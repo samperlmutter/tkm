@@ -1,5 +1,6 @@
 mod util;
 mod system;
+mod rendering;
 
 extern crate termion;
 extern crate tui;
@@ -8,17 +9,17 @@ extern crate sysinfo;
 use std::io;
 use termion::raw::IntoRawMode;
 use tui::backend::TermionBackend;
-use tui::layout::{Constraint, Direction, Layout};
-use tui::widgets::{Block, Borders, Widget, Sparkline, Text, List};
+use tui::layout::{Constraint, Direction};
+use tui::widgets::{Block, Borders, Widget, Text, List};
 use tui::Terminal;
 use termion::input::MouseTerminal;
 use termion::screen::AlternateScreen;
-use tui::style::{Color, Style};
 use termion::event::Key;
 use sysinfo::SystemExt;
 
 use crate::system::System;
 use crate::util::event::{Event, Events};
+use crate::rendering::*;
 
 
 
@@ -29,55 +30,35 @@ fn main() -> Result<(), failure::Error> {
     let stdout = AlternateScreen::from(stdout);
     let backend = TermionBackend::new(stdout);
     let mut terminal = Terminal::new(backend)?;
+    let size = terminal.size()?;
     terminal.hide_cursor()?;
     let events = Events::new();
 
     let mut sys = sysinfo::System::new();
     let mut system = System::new(&mut sys, terminal.size()?.width);
 
+    //Defining various layouts
+    let main_view = define_layout(Direction::Vertical, &[
+            Constraint::Percentage(20),
+            Constraint::Min(0)
+        ], size);
+    let system_overview = define_layout(Direction::Horizontal, &[
+            Constraint::Percentage(50),
+            Constraint::Percentage(50)
+        ], main_view[0]);
+    let sparklines = define_layout(Direction::Vertical, &[
+            Constraint::Percentage(50),
+            Constraint::Percentage(50)
+        ], system_overview[1]);
+
     loop {
         system.update();
 
         terminal.draw(|mut f| {
-            let main_view = Layout::default()
-                .direction(Direction::Vertical)
-                .margin(1)
-                .constraints(
-                    [
-                        Constraint::Percentage(20),
-                        Constraint::Min(0)
-                    ].as_ref()
-                )
-                .split(f.size());
-            let system_overview = Layout::default()
-                .direction(Direction::Horizontal)
-                .constraints(
-                    [
-                        Constraint::Percentage(50),
-                        Constraint::Percentage(50)
-                    ].as_ref()
-                )
-                .split(main_view[0]);
-            let sparklines = Layout::default()
-                .direction(Direction::Vertical)
-                .constraints(
-                    [
-                        Constraint::Percentage(50),
-                        Constraint::Percentage(50)
-                    ].as_ref()
-                )
-                .split(system_overview[1]);
-            Sparkline::default()
-                .block(
-                    Block::default()
-                        .title(&format!("Usage: {}% | Number of Cores: {}", system.cpu_current_usage, system.cpu_num_cores))
-                        .borders(Borders::LEFT | Borders::RIGHT | Borders::TOP)
-                        .border_style(Style::default().fg(Color::Green))
-                )
-                .data(&system.cpu_usage_history.as_slice())
-                .style(Style::default().fg(Color::Yellow))
-                .max(100)
-                .render(&mut f, sparklines[0]);
+            render_system_overview_layout(&mut f, sparklines[0], &system);
+
+
+            // Draws borders around areas I have yet to make
             Block::default()
                 .borders(Borders::ALL)
                 .title("Cores")
@@ -90,6 +71,9 @@ fn main() -> Result<(), failure::Error> {
                 .title("Processes")
                 .borders(Borders::ALL)
                 .render(&mut f, main_view[1]);
+
+
+
             // let log = system.cpu_usage_history.iter()
             //     .map(|sys|Text::raw(format!("{}", sys)));
             // List::new(log)
@@ -107,3 +91,5 @@ fn main() -> Result<(), failure::Error> {
 
     Ok(())
 }
+
+

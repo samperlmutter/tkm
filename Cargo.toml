@@ -7,14 +7,8 @@ edition = "2018"
 [dependencies]
 tui = {git = "https://github.com/fdehau/tui-rs"}
 termion = "1.5"
-sys-info = "*"
 sysinfo = {git = "https://github.com/GuillaumeGomez/sysinfo"}
-systemstat = "0.1.3"
+# systemstat = "*"
 itertools = "0.7"
 failure = "0.1"
 rand = "0.6"
-spork = {git = "https://github.com/azuqua/spork.rs"}
-
-# [dependencies.spork]
-# features = ["compile_unimplemented"]
-# git = "https://github.com/azuqua/spork.rs"

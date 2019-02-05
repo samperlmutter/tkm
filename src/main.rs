@@ -1,6 +1,7 @@
 mod util;
 mod system;
 mod rendering;
+mod log;
 
 extern crate termion;
 extern crate tui;
@@ -10,7 +11,7 @@ use std::io;
 use termion::raw::IntoRawMode;
 use tui::backend::TermionBackend;
 use tui::layout::{Constraint, Direction};
-use tui::widgets::{Block, Borders, Widget, Text, List};
+use tui::widgets::{Block, Borders, Widget};
 use tui::Terminal;
 use termion::input::MouseTerminal;
 use termion::screen::AlternateScreen;
@@ -20,8 +21,7 @@ use sysinfo::SystemExt;
 use crate::system::System;
 use crate::util::event::{Event, Events};
 use crate::rendering::*;
-
-
+use crate::log::*;
 
 
 fn main() -> Result<(), failure::Error> {
@@ -34,62 +34,60 @@ fn main() -> Result<(), failure::Error> {
     terminal.hide_cursor()?;
     let events = Events::new();
 
+    let mut log = Log::new();
     let mut sys = sysinfo::System::new();
     let mut system = System::new(&mut sys, terminal.size()?.width);
 
     //Defining various layouts
-    let main_view = define_layout(Direction::Vertical, &[
+    let main_view_layout = define_layout(Direction::Vertical, &[
             Constraint::Percentage(20),
             Constraint::Min(0)
         ], size);
-    let system_overview = define_layout(Direction::Horizontal, &[
+    let system_overview_layout = define_layout(Direction::Horizontal, &[
             Constraint::Percentage(50),
             Constraint::Percentage(50)
-        ], main_view[0]);
-    let sparklines = define_layout(Direction::Vertical, &[
+        ], main_view_layout[0]);
+    let sparklines_layout = define_layout(Direction::Vertical, &[
             Constraint::Percentage(50),
             Constraint::Percentage(50)
-        ], system_overview[1]);
+        ], system_overview_layout[1]);
+    let log_layout = define_layout(Direction::Vertical, &[
+        Constraint::Percentage(70),
+        Constraint::Percentage(30)
+    ], size);
 
     loop {
         system.update();
+        log.write("hi");
 
         terminal.draw(|mut f| {
-            render_system_overview_layout(&mut f, sparklines[0], &system);
-
+            render_system_overview_layout(&mut f, &sparklines_layout, &system);
 
             // Draws borders around areas I have yet to make
             Block::default()
                 .borders(Borders::ALL)
                 .title("Cores")
-                .render(&mut f, system_overview[0]);
-            Block::default()
-                .borders(Borders::ALL)
-                .title("Memory")
-                .render(&mut f, sparklines[1]);
+                .render(&mut f, system_overview_layout[0]);
             Block::default()
                 .title("Processes")
                 .borders(Borders::ALL)
-                .render(&mut f, main_view[1]);
+                .render(&mut f, main_view_layout[1]);
 
-
-
-            // let log = system.cpu_usage_history.iter()
-            //     .map(|sys|Text::raw(format!("{}", sys)));
-            // List::new(log)
-            //     .block(
-            //         Block::default()
-            //             .borders(Borders::ALL)
-            //             .title("Log")
-            //     )
-            //     .render(&mut f, system_overview[3])
+            log.render(&mut f, log_layout[1]);
         })?;
-        if let Event::Input(Key::Char('q')) = events.next()? {
-            break;
+
+        if let Event::Input(input) = events.next()? {
+            match input {
+                    Key::Char('q') => {
+                    break;
+                }
+                Key::Char('l') => {
+                    log.toggle_log();
+                }
+                _ => {}
+            }
         }
     }
 
     Ok(())
 }
-
-

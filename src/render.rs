@@ -1,5 +1,5 @@
 use tui::layout::{Constraint, Direction, Layout, Rect};
-use tui::widgets::{Block, Borders, Widget, Sparkline};
+use tui::widgets::{Block, Borders, Widget, Sparkline, Gauge};
 use tui::style::{Color, Style};
 use tui::backend::Backend;
 use tui::terminal::Frame;
@@ -12,7 +12,7 @@ pub fn define_layout (direction: Direction, constraints: &[Constraint], location
         .split(location)
 }
 
-pub fn render_system_overview_layout<B> (f: &mut Frame<B>, layout: &[Rect], system: &System) 
+pub fn render_sparklines_layout<B> (f: &mut Frame<B>, layout: &[Rect], system: &System) 
     where
     B: Backend {
     Sparkline::default()
@@ -38,4 +38,49 @@ pub fn render_system_overview_layout<B> (f: &mut Frame<B>, layout: &[Rect], syst
         .style(Style::default().fg(Color::Blue))
         .max(system.mem_total)
         .render(f, layout[1]);
+}
+
+pub fn render_cpu_cores_layout<B> (f: &mut Frame<B>, layout: &[Rect], system: &System)
+    where
+    B: Backend {
+     Gauge::default()
+        .block(
+            Block::default()
+            .title("Core 1")
+            .borders(Borders::ALL)
+            .border_style(Style::default().fg(Color::Green))
+        )
+        .style(Style::default().fg(Color::Green))
+        .percent(system.cpu_core_usages[0])
+        .render(f, layout[0]);
+     Gauge::default()
+        .block(
+            Block::default()
+            .title("Core 2")
+            .borders(Borders::ALL)
+            .border_style(Style::default().fg(Color::Green))
+        )
+        .style(Style::default().fg(Color::Green))
+        .percent(system.cpu_core_usages[1])
+        .render(f, layout[1]);
+     Gauge::default()
+        .block(
+            Block::default()
+            .title("Core 3")
+            .borders(Borders::ALL)
+            .border_style(Style::default().fg(Color::Green))
+        )
+        .style(Style::default().fg(Color::Green))
+        .percent(system.cpu_core_usages[2])
+        .render(f, layout[2]);
+     Gauge::default()
+        .block(
+            Block::default()
+            .title("Core 4")
+            .borders(Borders::ALL)
+            .border_style(Style::default().fg(Color::Green))
+        )
+        .style(Style::default().fg(Color::Green))
+        .percent(system.cpu_core_usages[3])
+        .render(f, layout[3]);
 }

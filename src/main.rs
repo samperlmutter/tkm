@@ -39,7 +39,7 @@ fn main() -> Result<(), failure::Error> {
 
     //Defining various layouts
     let main_view_layout = define_layout(Direction::Vertical, &[
-            Constraint::Percentage(20),
+            Constraint::Percentage(25),
             Constraint::Min(0)
         ], size);
     let system_overview_layout = define_layout(Direction::Horizontal, &[
@@ -51,21 +51,25 @@ fn main() -> Result<(), failure::Error> {
             Constraint::Percentage(50)
         ], system_overview_layout[1]);
     let log_layout = define_layout(Direction::Vertical, &[
-        Constraint::Percentage(70),
-        Constraint::Percentage(30)
-    ], size);
+            Constraint::Percentage(70),
+            Constraint::Percentage(30)
+        ], size);
+    let cpu_cores_layout = define_layout(Direction::Vertical, &[
+            Constraint::Length(3),
+            Constraint::Length(3),
+            Constraint::Length(3),
+            Constraint::Length(3),
+            Constraint::Min(0)
+        ], system_overview_layout[0]);
 
     loop {
         system.update();
 
         terminal.draw(|mut f| {
-            render_system_overview_layout(&mut f, &sparklines_layout, &system);
+            render_sparklines_layout(&mut f, &sparklines_layout, &system);
+            render_cpu_cores_layout(&mut f, &cpu_cores_layout, &system);
 
             // Draws borders around areas I have yet to make
-            Block::default()
-                .borders(Borders::ALL)
-                .title("Cores")
-                .render(&mut f, system_overview_layout[0]);
             Block::default()
                 .title("Processes")
                 .borders(Borders::ALL)

@@ -2,8 +2,8 @@ extern crate sysinfo;
 
 use sysinfo::{SystemExt, ProcessorExt};
 
-pub struct System<'a> {
-    system: &'a mut sysinfo::System,
+pub struct System {
+    system: sysinfo::System,
     pub cpu_usage_history: Vec<u64>,
     pub cpu_current_usage: u64,
     pub cpu_num_cores: usize,
@@ -13,8 +13,8 @@ pub struct System<'a> {
     pub mem_usage_history: Vec<u64>
 }
 
-impl<'a> System<'a> {
-    pub fn new(system: &mut sysinfo::System, initial_size: u16) -> System {
+impl System {
+    pub fn new(system: sysinfo::System, initial_size: u16) -> System {
         let history_width = initial_size / 2;
 
         let cpu_usage_history = vec![0; history_width as usize];

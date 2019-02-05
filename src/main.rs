@@ -1,6 +1,6 @@
 mod util;
 mod system;
-mod rendering;
+mod render;
 mod log;
 
 extern crate termion;
@@ -20,7 +20,7 @@ use sysinfo::SystemExt;
 
 use crate::system::System;
 use crate::util::event::{Event, Events};
-use crate::rendering::*;
+use crate::render::*;
 use crate::log::*;
 
 
@@ -35,8 +35,7 @@ fn main() -> Result<(), failure::Error> {
     let events = Events::new();
 
     let mut log = Log::new();
-    let mut sys = sysinfo::System::new();
-    let mut system = System::new(&mut sys, terminal.size()?.width);
+    let mut system = System::new(sysinfo::System::new(), terminal.size()?.width);
 
     //Defining various layouts
     let main_view_layout = define_layout(Direction::Vertical, &[

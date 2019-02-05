@@ -58,7 +58,6 @@ fn main() -> Result<(), failure::Error> {
 
     loop {
         system.update();
-        log.write("hi");
 
         terminal.draw(|mut f| {
             render_system_overview_layout(&mut f, &sparklines_layout, &system);

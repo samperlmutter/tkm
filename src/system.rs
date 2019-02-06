@@ -1,4 +1,5 @@
 extern crate sysinfo;
+extern crate sys_info;
 
 use sysinfo::{SystemExt, ProcessorExt};
 
@@ -15,7 +16,7 @@ pub struct System {
 }
 
 impl System {
-    pub fn new(system: sysinfo::System, initial_size: u16) -> System {
+    pub fn new(system: sysinfo::System, initial_size: u16) -> Result<System, failure::Error> {
         let history_width = initial_size / 2;
 
         // Overall CPU usage
@@ -23,10 +24,10 @@ impl System {
         let cpu_num_cores: usize = system.get_processor_list().len() - 1;
 
         // Memory usage
-        let mem_total = system.get_total_memory();
+        let mem_total = sys_info::mem_info()?.total;
         let mem_usage_history = vec![0; history_width as usize];
 
-        System {
+        Ok(System {
             system,
             cpu_usage_history,
             cpu_current_usage: 0,
@@ -36,11 +37,12 @@ impl System {
             mem_used: 0,
             mem_usage_history,
             cpu_core_usages: vec![]
-        }
+        })
     }
 
-    pub fn update(&mut self) {
+    pub fn update(&mut self) -> Result<(), failure::Error> {
         self.system.refresh_all();
+        let mem_info = sys_info::mem_info()?;
 
         // Overall CPU usage
         self.cpu_current_usage = (self.system.get_processor_list()[0].get_cpu_usage() * 100.0).round() as u64;
@@ -48,8 +50,8 @@ impl System {
         self.cpu_usage_history.remove(0);
 
         // Memory usage
-        self.mem_used = self.system.get_used_memory();
-        self.mem_free = self.system.get_free_memory();
+        self.mem_used = mem_info.total - mem_info.avail;
+        self.mem_free = mem_info.avail;
         self.mem_usage_history.push(self.mem_used);
         self.mem_usage_history.remove(0);
 
@@ -59,5 +61,7 @@ impl System {
             .skip(1)
             .map(|p| (p.get_cpu_usage() * 100.0).round() as u16)
             .collect();
+
+        Ok(())
     }
 }

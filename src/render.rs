@@ -1,8 +1,12 @@
-use tui::layout::{Constraint, Direction, Layout, Rect};
-use tui::widgets::{Block, Borders, Widget, Sparkline, Gauge};
+extern crate pretty_bytes;
+
+use tui::layout::{Constraint, Direction, Layout, Rect, Corner};
+use tui::widgets::{Block, Borders, Widget, Sparkline, Gauge, List, Text};
 use tui::style::{Color, Style};
 use tui::backend::Backend;
 use tui::terminal::Frame;
+use pretty_bytes::converter::convert;
+
 use crate::system::System;
 
 pub fn define_layout (direction: Direction, constraints: &[Constraint], location: Rect) -> Vec<Rect> {
@@ -30,7 +34,7 @@ pub fn render_sparklines_layout<B> (f: &mut Frame<B>, layout: &[Rect], system: &
     Sparkline::default()
         .block(
             Block::default()
-                .title(&format!("Memory Used: {} | Memory Free: {}", system.mem_used, system.mem_free))
+                .title(&format!("Memory Used: {} | Memory Free: {}", convert(system.mem_used as f64 * 1000.0), convert(system.mem_free as f64 * 1000.0)))
                 .borders(Borders::LEFT | Borders::RIGHT | Borders::TOP)
                 .border_style(Style::default().fg(Color::Green))
         )

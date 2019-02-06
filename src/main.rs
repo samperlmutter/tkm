@@ -35,7 +35,7 @@ fn main() -> Result<(), failure::Error> {
     let events = Events::new();
 
     let mut log = Log::new();
-    let mut system = System::new(sysinfo::System::new(), terminal.size()?.width);
+    let mut system = System::new(sysinfo::System::new(), terminal.size()?.width)?;
 
     //Defining various layouts
     let main_view_layout = define_layout(Direction::Vertical, &[
@@ -63,7 +63,7 @@ fn main() -> Result<(), failure::Error> {
         ], system_overview_layout[0]);
 
     loop {
-        system.update();
+        system.update()?;
 
         terminal.draw(|mut f| {
             render_sparklines_layout(&mut f, &sparklines_layout, &system);

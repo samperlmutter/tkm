@@ -64,6 +64,7 @@ fn main() -> Result<(), failure::Error> {
             Constraint::Min(0)
         ], system_overview_layout[0]);
 
+        // fs::write("log.txt", format!("{:?}", system.system.get_process_list().get(&sysinfo::get_current_pid())))?;
     loop {
         system.update()?;
 
@@ -72,7 +73,7 @@ fn main() -> Result<(), failure::Error> {
             render_cpu_cores_layout(&mut f, &cpu_cores_layout, &system);
             render_processes_layout(&mut f, &main_view_layout, &system);
 
-            log.render(&mut f, log_layout[1]);
+            render_log(&log, &mut f, log_layout[1]);
         })?;
 
         if let Event::Input(input) = events.next()? {

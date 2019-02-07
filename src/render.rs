@@ -1,13 +1,14 @@
 extern crate pretty_bytes;
 
 use tui::layout::{Constraint, Direction, Layout, Rect, Corner};
-use tui::widgets::{Block, Borders, Widget, Sparkline, Gauge, List, Text};
+use tui::widgets::{Block, Borders, Widget, Sparkline, Gauge, Row, Table, List, Text};
 use tui::style::{Color, Style};
 use tui::backend::Backend;
 use tui::terminal::Frame;
 use pretty_bytes::converter::convert;
 
 use crate::system::System;
+use crate::log::*;
 
 pub fn define_layout (direction: Direction, constraints: &[Constraint], location: Rect) -> Vec<Rect> {
     Layout::default()
@@ -15,6 +16,25 @@ pub fn define_layout (direction: Direction, constraints: &[Constraint], location
         .constraints(constraints)
         .split(location)
 }
+
+pub fn render_log<B> (log: &Log, f: &mut Frame<B>, layout: Rect)
+        where
+        B: Backend {
+            // TODO: Fix log not rendering on top of everything
+            let log_text = log.log.iter().map(Text::raw);
+            if log.show_log {
+                List::new(log_text)
+                    .block(
+                        Block::default()
+                            .borders(Borders::ALL)
+                            .title("Log")
+                            .style(Style::default().bg(Color::Black))
+                    )
+                    .style(Style::default().bg(Color::Black))
+                    .start_corner(Corner::BottomLeft)
+                    .render(f, layout);
+            }
+    }
 
 pub fn render_sparklines_layout<B> (f: &mut Frame<B>, layout: &[Rect], system: &System) 
     where

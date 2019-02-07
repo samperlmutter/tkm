@@ -88,3 +88,19 @@ pub fn render_cpu_cores_layout<B> (f: &mut Frame<B>, layout: &[Rect], system: &S
         .percent(system.cpu_core_usages[3])
         .render(f, layout[3]);
 }
+
+pub fn render_processes_layout<B> (f: &mut Frame<B>, layout: &[Rect], system: &System)
+    where
+    B: Backend {
+    let headers = ["PID", "Name", "CPU", "Memory"];
+    let processes = system.get_processes();
+    let rows = processes.iter().map(|process| {
+        Row::Data(process.iter())
+    });
+
+    Table::new(headers.iter(), rows)
+        .block(Block::default().borders(Borders::ALL).title("Processes"))
+        .widths(&[6, 25, 6, 9])
+        .column_spacing(4)
+        .render(f, layout[1]);
+}

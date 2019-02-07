@@ -2,6 +2,7 @@ mod util;
 mod system;
 mod render;
 mod log;
+mod app;
 
 extern crate termion;
 extern crate tui;
@@ -11,7 +12,6 @@ use std::io;
 use termion::raw::IntoRawMode;
 use tui::backend::TermionBackend;
 use tui::layout::{Constraint, Direction};
-use tui::widgets::{Block, Borders, Widget};
 use tui::Terminal;
 use termion::input::MouseTerminal;
 use termion::screen::AlternateScreen;
@@ -22,6 +22,7 @@ use crate::system::System;
 use crate::util::event::{Event, Events};
 use crate::render::*;
 use crate::log::*;
+use crate::app::*;
 
 
 fn main() -> Result<(), failure::Error> {
@@ -36,6 +37,7 @@ fn main() -> Result<(), failure::Error> {
 
     let mut log = Log::new();
     let mut system = System::new(sysinfo::System::new(), terminal.size()?.width)?;
+    let mut app = App::new();
 
     //Defining various layouts
     let main_view_layout = define_layout(Direction::Vertical, &[
@@ -68,23 +70,24 @@ fn main() -> Result<(), failure::Error> {
         terminal.draw(|mut f| {
             render_sparklines_layout(&mut f, &sparklines_layout, &system);
             render_cpu_cores_layout(&mut f, &cpu_cores_layout, &system);
-
-            // Draws borders around areas I have yet to make
-            Block::default()
-                .title("Processes")
-                .borders(Borders::ALL)
-                .render(&mut f, main_view_layout[1]);
+            render_processes_layout(&mut f, &main_view_layout, &system);
 
             log.render(&mut f, log_layout[1]);
         })?;
 
         if let Event::Input(input) = events.next()? {
             match input {
-                    Key::Char('q') => {
+                Key::Char('q') => {
                     break;
                 }
                 Key::Char('l') => {
                     log.toggle_log();
+                }
+                Key::Up => {
+                    app.move_cursor_up();
+                }
+                Key::Down => {
+                    app.move_cursor_down();
                 }
                 _ => {}
             }

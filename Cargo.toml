@@ -1,5 +1,5 @@
 [package]
-name = "task-manager"
+name = "tkm"
 version = "0.1.0"
 authors = ["Sam Perlmutter <sam.perlmutter227@gmail.com>"]
 edition = "2018"
@@ -7,7 +7,6 @@ edition = "2018"
 [dependencies]
 tui = { git = "https://github.com/fdehau/tui-rs" }
 termion = "1.5"
-# sysinfo = { git = "https://github.com/GuillaumeGomez/sysinfo" }
 sysinfo = "0.3.14"
 itertools = "0.8"
 failure = "0.1"

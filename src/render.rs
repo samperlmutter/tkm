@@ -67,46 +67,18 @@ pub fn render_sparklines_layout<B> (f: &mut Frame<B>, layout: &[Rect], system: &
 pub fn render_cpu_cores_layout<B> (f: &mut Frame<B>, layout: &[Rect], system: &System)
     where
     B: Backend {
-     Gauge::default()
-        .block(
-            Block::default()
-            .title("Core 1")
-            .borders(Borders::ALL)
-            .border_style(Style::default().fg(Color::Green))
-        )
-        .style(Style::default().fg(Color::Green))
-        .percent(system.cpu_core_usages[0])
-        .render(f, layout[0]);
-     Gauge::default()
-        .block(
-            Block::default()
-            .title("Core 2")
-            .borders(Borders::ALL)
-            .border_style(Style::default().fg(Color::Green))
-        )
-        .style(Style::default().fg(Color::Green))
-        .percent(system.cpu_core_usages[1])
-        .render(f, layout[1]);
-     Gauge::default()
-        .block(
-            Block::default()
-            .title("Core 3")
-            .borders(Borders::ALL)
-            .border_style(Style::default().fg(Color::Green))
-        )
-        .style(Style::default().fg(Color::Green))
-        .percent(system.cpu_core_usages[2])
-        .render(f, layout[2]);
-     Gauge::default()
-        .block(
-            Block::default()
-            .title("Core 4")
-            .borders(Borders::ALL)
-            .border_style(Style::default().fg(Color::Green))
-        )
-        .style(Style::default().fg(Color::Green))
-        .percent(system.cpu_core_usages[3])
-        .render(f, layout[3]);
+    for (i, core_usage) in system.cpu_core_usages.iter().enumerate() {
+        Gauge::default()
+            .block(
+                Block::default()
+                .title(&format!("Core {}", i + 1))
+                .borders(Borders::ALL)
+                .border_style(Style::default().fg(Color::Green))
+            )
+            .style(Style::default().fg(Color::Green))
+            .percent(*core_usage)
+            .render(f, layout[i]);
+    }
 }
 
 pub fn render_processes_layout<B> (f: &mut Frame<B>, layout: &[Rect], system: &System)

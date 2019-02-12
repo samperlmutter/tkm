@@ -5,7 +5,7 @@ authors = ["Sam Perlmutter <sam.perlmutter227@gmail.com>"]
 edition = "2018"
 
 [dependencies]
-tui = { git = "https://github.com/fdehau/tui-rs" }
+tui = "0.4.0"
 termion = "1.5"
 sysinfo = "0.3.14"
 itertools = "0.8"

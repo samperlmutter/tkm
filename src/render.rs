@@ -1,5 +1,3 @@
-extern crate pretty_bytes;
-
 use tui::layout::{Constraint, Direction, Layout, Rect, Corner};
 use tui::widgets::{Block, Borders, Widget, Sparkline, Gauge, Row, Table, List, Text};
 use tui::style::{Color, Style};
@@ -9,7 +7,9 @@ use pretty_bytes::converter::convert;
 
 use crate::system::System;
 use crate::log::*;
+use crate::process::Process;
 
+// Helper function to make creating layouts easier
 pub fn define_layout (direction: Direction, constraints: &[Constraint], location: Rect) -> Vec<Rect> {
     Layout::default()
         .direction(direction)
@@ -20,20 +20,16 @@ pub fn define_layout (direction: Direction, constraints: &[Constraint], location
 pub fn render_log<B> (log: &Log, f: &mut Frame<B>, layout: Rect)
         where
         B: Backend {
-            // TODO: Fix log not rendering on top of everything
             let log_text = log.log.iter().map(Text::raw);
-            if log.show_log {
-                List::new(log_text)
-                    .block(
-                        Block::default()
-                            .borders(Borders::ALL)
-                            .title("Log")
-                            .style(Style::default().bg(Color::Black))
-                    )
-                    .style(Style::default().bg(Color::Black))
-                    .start_corner(Corner::BottomLeft)
-                    .render(f, layout);
-            }
+            List::new(log_text)
+                .block(
+                    Block::default()
+                        .borders(Borders::ALL)
+                        .title("Log")
+                        .style(Style::default().bg(Color::Black))
+                )
+                .start_corner(Corner::BottomLeft)
+                .render(f, layout);
     }
 
 pub fn render_sparklines_layout<B> (f: &mut Frame<B>, layout: &[Rect], system: &System) 
@@ -67,6 +63,7 @@ pub fn render_sparklines_layout<B> (f: &mut Frame<B>, layout: &[Rect], system: &
 pub fn render_cpu_cores_layout<B> (f: &mut Frame<B>, layout: &[Rect], system: &System)
     where
     B: Backend {
+    // Creates a guage for each cpu core
     for (i, core_usage) in system.cpu_core_usages.iter().enumerate() {
         Gauge::default()
             .block(

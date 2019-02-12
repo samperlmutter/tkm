@@ -3,10 +3,7 @@ mod system;
 mod render;
 mod log;
 mod app;
-
-extern crate termion;
-extern crate tui;
-extern crate sysinfo;
+mod process;
 
 use std::io;
 use termion::raw::IntoRawMode;
@@ -38,37 +35,41 @@ fn main() -> Result<(), failure::Error> {
     let mut system = System::new(sysinfo::System::new(), terminal.size()?.width)?;
     let mut app = App::new();
 
-    let main_view_constraints = vec![Constraint::Percentage(25), Constraint::Min(0)];
-    let system_overview_constrants = vec![Constraint::Percentage(50); 2];
-    let sparklines_constraints = vec![Constraint::Percentage(50); 2];
-    let mut cpu_core_contraints = vec![Constraint::Length(3); system.cpu_num_cores];
-    let log_constraints = vec![Constraint::Percentage(70), Constraint::Percentage(30)];
-    cpu_core_contraints.push(Constraint::Min(0));
 
-    // fs::write("log.txt", format!("{:?}", system.system.get_process_list().get(&sysinfo::get_current_pid())))?;
     loop {
         system.update()?;
 
+        // Resizes the main view to make room for the debug log if it's showing
+        let main_view_constraints = if log.show_log {
+            vec![Constraint::Percentage(25), Constraint::Percentage(45), Constraint::Min(0)]
+        } else {
+            vec![Constraint::Percentage(25), Constraint::Percentage(75), Constraint::Min(0)]
+        };
+        let system_overview_constrants = vec![Constraint::Percentage(50); 2];
+        let sparklines_constraints = vec![Constraint::Percentage(50); 2];
+        // Creates as many constraints as there are cpu cores
+        let mut cpu_core_contraints = vec![Constraint::Length(3); system.cpu_num_cores];
+        cpu_core_contraints.push(Constraint::Min(0));
+
+        let main_view_layout = define_layout(Direction::Vertical, &main_view_constraints, terminal.size()?);
+        let system_overview_layout = define_layout(Direction::Horizontal, &system_overview_constrants, main_view_layout[0]);
+        let sparklines_layout = define_layout(Direction::Vertical, &sparklines_constraints, system_overview_layout[1]);
+        let cpu_cores_layout = define_layout(Direction::Vertical, &cpu_core_contraints, system_overview_layout[0]);
+
         terminal.draw(|mut f| {
-            let main_view_layout = define_layout(Direction::Vertical, &main_view_constraints, f.size());
-            let system_overview_layout = define_layout(Direction::Horizontal, &system_overview_constrants, main_view_layout[0]);
-            let sparklines_layout = define_layout(Direction::Vertical, &sparklines_constraints, system_overview_layout[1]);
-            let log_layout = define_layout(Direction::Vertical, &log_constraints, f.size());
-            let cpu_cores_layout = define_layout(Direction::Vertical, &cpu_core_contraints, system_overview_layout[0]);
-
-
             render_sparklines_layout(&mut f, &sparklines_layout, &system);
             render_cpu_cores_layout(&mut f, &cpu_cores_layout, &system);
             render_processes_layout(&mut f, &main_view_layout, &system);
-
-            render_log(&log, &mut f, log_layout[1]);
+            render_log(&log, &mut f, main_view_layout[2]);
         })?;
 
         if let Event::Input(input) = events.next()? {
             match input {
+                // Quit the program
                 Key::Char('q') => {
                     break;
                 }
+                // Toggle showing the debugging log
                 Key::Char('l') => {
                     log.toggle_log();
                 }

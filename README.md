@@ -1,6 +1,9 @@
 # tkm
 A terminal based **t**as**k** **m**anager.
 
-![tkm screenshot](https://i.imgur.com/GAdo3zh.jpg)
+<center><img class="center" src="https://i.imgur.com/v6rQZFE.png" height="500"></center>
 
-Install by running `git clone https://github.com/samperlmutter/tkm.git && cd tkm && cargo install --path .`
+# Running locally
+1. Make sure you have [rust installed](https://doc.rust-lang.org/book/ch01-01-installation.html) and your toolchain is set to nightly
+2. In the root of the project, run `cargo run` to start the program
+    - If you want to be able to run tkm from anywhere, run `cargo install --path .` from the root directory

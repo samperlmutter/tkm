@@ -1,3 +1,4 @@
+#[macro_use]
 mod util;
 mod system;
 mod render;
@@ -16,10 +17,11 @@ use termion::event::Key;
 use sysinfo::SystemExt;
 
 use crate::system::System;
-use crate::util::event::{Event, Events};
+use crate::util::*;
 use crate::render::*;
 use crate::console::*;
 use crate::app::*;
+use crate::process::Process;
 
 
 fn main() -> Result<(), failure::Error> {
@@ -29,7 +31,7 @@ fn main() -> Result<(), failure::Error> {
     let backend = TermionBackend::new(stdout);
     let mut terminal = Terminal::new(backend)?;
     terminal.hide_cursor()?;
-    let events = Events::new();
+    let events = event::Events::new();
 
     let mut console = Console::new();
     let mut system = System::new(sysinfo::System::new(), terminal.size()?.width)?;
@@ -60,11 +62,27 @@ fn main() -> Result<(), failure::Error> {
         terminal.draw(|mut f| {
             render_sparklines_layout(&mut f, &sparklines_layout, &system);
             render_cpu_cores_layout(&mut f, &cpu_cores_layout, &system);
-            render_processes_layout(&mut f, &main_view_layout, &system);
+
+            // Controls how the processes list is sorted
+            match app.processes_sort_by {
+                SortBy::PID => {
+                    render_processes_layout(&mut f, &main_view_layout, &sort_processes!(system.processes, Process.pid, app.processes_sort_direction));
+                }
+                SortBy::Name => {
+                    render_processes_layout(&mut f, &main_view_layout, &sort_processes!(system.processes, Process.name, app.processes_sort_direction));
+                }
+                SortBy::CPU => {
+                    render_processes_layout(&mut f, &main_view_layout, &sort_processes!(system.processes, Process.cpu, app.processes_sort_direction));
+                }
+                SortBy::Memory => {
+                    render_processes_layout(&mut f, &main_view_layout, &sort_processes!(system.processes, Process.mem, app.processes_sort_direction));
+                }
+            }
+
             render_console(&mut f, main_view_layout[2], &console);
         })?;
 
-        if let Event::Input(input) = events.next()? {
+        if let event::Event::Input(input) = events.next()? {
             match input {
                 // Quit the program
                 Key::Char('q') => {
@@ -74,11 +92,20 @@ fn main() -> Result<(), failure::Error> {
                 Key::Char('/') => {
                     console.toggle_visibility();
                 }
-                Key::Up => {
-                    app.move_cursor_up();
+                // Sort processes by CPU usage
+                Key::Char('c') => {
+                    app.processes_sort_by = SortBy::CPU;
+                    app.toggle_sort_direction();
                 }
-                Key::Down => {
-                    app.move_cursor_down();
+                // Sort processes by memory usage
+                Key::Char('m') => {
+                    app.processes_sort_by = SortBy::Memory;
+                    app.toggle_sort_direction();
+                }
+                // Sort processes by PID
+                Key::Char('p') => {
+                    app.processes_sort_by = SortBy::PID;
+                    app.toggle_sort_direction();
                 }
                 _ => {}
             }

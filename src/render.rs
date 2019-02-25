@@ -6,7 +6,6 @@ use tui::terminal::Frame;
 use pretty_bytes::converter::convert;
 
 use crate::system::System;
-use crate::process::Process;
 use crate::console::*;
 
 // Helper function to make creating layouts easier
@@ -78,14 +77,13 @@ pub fn render_cpu_cores_layout<B> (f: &mut Frame<B>, layout: &[Rect], system: &S
     }
 }
 
-pub fn render_processes_layout<B> (f: &mut Frame<B>, layout: &[Rect], system: &System)
+pub fn render_processes_layout<B> (f: &mut Frame<B>, layout: &[Rect], processes: &Vec<Vec<String>>)
     where
     B: Backend {
     let headers = ["PID", "Name", "CPU", "Memory"];
-    let processes = system.get_processes();
-    let rows = processes.iter().map(|process| {
+    let rows = processes.iter().map(|process|
         Row::Data(process.iter())
-    });
+    );
 
     Table::new(headers.iter(), rows)
         .block(Block::default().borders(Borders::ALL).title("Processes"))

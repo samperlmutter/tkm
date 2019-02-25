@@ -6,8 +6,8 @@ use tui::terminal::Frame;
 use pretty_bytes::converter::convert;
 
 use crate::system::System;
-use crate::log::*;
 use crate::process::Process;
+use crate::console::*;
 
 // Helper function to make creating layouts easier
 pub fn define_layout (direction: Direction, constraints: &[Constraint], location: Rect) -> Vec<Rect> {
@@ -17,20 +17,20 @@ pub fn define_layout (direction: Direction, constraints: &[Constraint], location
         .split(location)
 }
 
-pub fn render_log<B> (log: &Log, f: &mut Frame<B>, layout: Rect)
+pub fn render_console<B> (f: &mut Frame<B>, layout: Rect, console: &Console)
         where
         B: Backend {
-            let log_text = log.log.iter().map(Text::raw);
+            let log_text = console.buffer.iter().map(Text::raw);
             List::new(log_text)
                 .block(
                     Block::default()
                         .borders(Borders::ALL)
-                        .title("Log")
+                        .title("Console")
                         .style(Style::default().bg(Color::Black))
                 )
                 .start_corner(Corner::BottomLeft)
                 .render(f, layout);
-    }
+}
 
 pub fn render_sparklines_layout<B> (f: &mut Frame<B>, layout: &[Rect], system: &System) 
     where

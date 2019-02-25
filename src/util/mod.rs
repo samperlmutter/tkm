@@ -23,3 +23,7 @@ impl<'a> TabsState<'a> {
         }
     }
 }
+pub enum Mode {
+    Console,
+    Main
+}

@@ -1,7 +1,7 @@
 mod util;
 mod system;
 mod render;
-mod log;
+mod console;
 mod app;
 mod process;
 
@@ -18,7 +18,7 @@ use sysinfo::SystemExt;
 use crate::system::System;
 use crate::util::event::{Event, Events};
 use crate::render::*;
-use crate::log::*;
+use crate::console::*;
 use crate::app::*;
 
 
@@ -31,7 +31,7 @@ fn main() -> Result<(), failure::Error> {
     terminal.hide_cursor()?;
     let events = Events::new();
 
-    let mut log = Log::new();
+    let mut console = Console::new();
     let mut system = System::new(sysinfo::System::new(), terminal.size()?.width)?;
     let mut app = App::new();
 
@@ -39,14 +39,15 @@ fn main() -> Result<(), failure::Error> {
     loop {
         system.update()?;
 
-        // Resizes the main view to make room for the debug log if it's showing
-        let main_view_constraints = if log.show_log {
+        // Resizes the main view to make room for the console if it's showing
+        let main_view_constraints = if console.visible {
             vec![Constraint::Percentage(25), Constraint::Percentage(45), Constraint::Min(0)]
         } else {
             vec![Constraint::Percentage(25), Constraint::Percentage(75), Constraint::Min(0)]
         };
         let system_overview_constrants = vec![Constraint::Percentage(50); 2];
         let sparklines_constraints = vec![Constraint::Percentage(50); 2];
+
         // Creates as many constraints as there are cpu cores
         let mut cpu_core_contraints = vec![Constraint::Length(3); system.cpu_num_cores];
         cpu_core_contraints.push(Constraint::Min(0));
@@ -60,7 +61,7 @@ fn main() -> Result<(), failure::Error> {
             render_sparklines_layout(&mut f, &sparklines_layout, &system);
             render_cpu_cores_layout(&mut f, &cpu_cores_layout, &system);
             render_processes_layout(&mut f, &main_view_layout, &system);
-            render_log(&log, &mut f, main_view_layout[2]);
+            render_console(&mut f, main_view_layout[2], &console);
         })?;
 
         if let Event::Input(input) = events.next()? {
@@ -70,8 +71,8 @@ fn main() -> Result<(), failure::Error> {
                     break;
                 }
                 // Toggle showing the debugging log
-                Key::Char('l') => {
-                    log.toggle_log();
+                Key::Char('/') => {
+                    console.toggle_visibility();
                 }
                 Key::Up => {
                     app.move_cursor_up();

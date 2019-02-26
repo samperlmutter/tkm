@@ -1,15 +1,17 @@
 use std::fmt::Display;
 
 pub struct Console {
-    pub buffer: Vec<String>,
-    pub visible: bool
+    pub visible: bool,
+    pub history: Vec<String>,
+    pub buffer: String
 }
 
 impl Console {
     pub fn new() -> Console {
         Console {
-            buffer: Vec::<String>::new(),
-            visible: false
+            history: Vec::<String>::new(),
+            visible: false,
+            buffer: String::new()
         }
     }
 
@@ -17,7 +19,7 @@ impl Console {
     pub fn write<T> (&mut self, data: T)
         where
         T: Display {
-        self.buffer.insert(0, format!("{}", data));
+        self.history.insert(0, format!("{}", data));
     }
 
     pub fn toggle_visibility(&mut self) {

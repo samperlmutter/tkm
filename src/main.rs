@@ -7,10 +7,12 @@ mod app;
 mod process;
 
 use std::io;
-use termion::raw::IntoRawMode;
+use std::io::Write;
 use tui::backend::TermionBackend;
 use tui::layout::{Constraint, Direction};
 use tui::Terminal;
+use termion::raw::IntoRawMode;
+use termion::cursor::Goto;
 use termion::input::MouseTerminal;
 use termion::screen::AlternateScreen;
 use termion::event::Key;
@@ -30,22 +32,21 @@ fn main() -> Result<(), failure::Error> {
     let stdout = AlternateScreen::from(stdout);
     let backend = TermionBackend::new(stdout);
     let mut terminal = Terminal::new(backend)?;
-    terminal.hide_cursor()?;
     let events = event::Events::new();
 
     let mut console = Console::new();
     let mut system = System::new(sysinfo::System::new(), terminal.size()?.width)?;
     let mut app = App::new();
 
-
     loop {
         system.update()?;
+        app.size = terminal.size()?;
 
         // Resizes the main view to make room for the console if it's showing
         let main_view_constraints = if console.visible {
-            vec![Constraint::Percentage(25), Constraint::Percentage(45), Constraint::Min(0)]
+            vec![Constraint::Percentage(25), Constraint::Percentage(45), Constraint::Min(0), Constraint::Length(2)]
         } else {
-            vec![Constraint::Percentage(25), Constraint::Percentage(75), Constraint::Min(0)]
+            vec![Constraint::Percentage(25), Constraint::Min(0), Constraint::Length(3)]
         };
         let system_overview_constrants = vec![Constraint::Percentage(50); 2];
         let sparklines_constraints = vec![Constraint::Percentage(50); 2];
@@ -54,14 +55,18 @@ fn main() -> Result<(), failure::Error> {
         let mut cpu_core_contraints = vec![Constraint::Length(3); system.cpu_num_cores];
         cpu_core_contraints.push(Constraint::Min(0));
 
+        // Define layouts for the different sections of the display
         let main_view_layout = define_layout(Direction::Vertical, &main_view_constraints, terminal.size()?);
         let system_overview_layout = define_layout(Direction::Horizontal, &system_overview_constrants, main_view_layout[0]);
         let sparklines_layout = define_layout(Direction::Vertical, &sparklines_constraints, system_overview_layout[1]);
         let cpu_cores_layout = define_layout(Direction::Vertical, &cpu_core_contraints, system_overview_layout[0]);
 
+        terminal.hide_cursor()?;
         terminal.draw(|mut f| {
             render_sparklines_layout(&mut f, &sparklines_layout, &system);
             render_cpu_cores_layout(&mut f, &cpu_cores_layout, &system);
+            // render_console(&mut f, main_view_layout[2], &console);
+            render_input_layout(&mut f, main_view_layout[2], &console.buffer);
 
             // Controls how the processes list is sorted
             match app.processes_sort_by {
@@ -78,9 +83,14 @@ fn main() -> Result<(), failure::Error> {
                     render_processes_layout(&mut f, &main_view_layout, &sort_processes!(system.processes, Process.mem, app.processes_sort_direction));
                 }
             }
-
-            render_console(&mut f, main_view_layout[2], &console);
         })?;
+
+        terminal.show_cursor()?;
+        write!(
+            terminal.backend_mut(),
+            "{}",
+            Goto(1 + console.buffer.len() as u16, app.size.height)
+        )?;
 
         if let event::Event::Input(input) = events.next()? {
             match input {
@@ -89,9 +99,9 @@ fn main() -> Result<(), failure::Error> {
                     break;
                 }
                 // Toggle showing the debugging log
-                Key::Char('/') => {
-                    console.toggle_visibility();
-                }
+                // Key::Char('/') => {
+                //     console.toggle_visibility();
+                // }
                 // Sort processes by CPU usage
                 Key::Char('c') => {
                     app.processes_sort_by = SortBy::CPU;
@@ -106,6 +116,10 @@ fn main() -> Result<(), failure::Error> {
                 Key::Char('p') => {
                     app.processes_sort_by = SortBy::PID;
                     app.toggle_sort_direction();
+                }
+                // Enter input into the console
+                Key::Char(c) => {
+                    console.buffer.push(c);
                 }
                 _ => {}
             }

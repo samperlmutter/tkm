@@ -1,5 +1,5 @@
 use tui::layout::{Constraint, Direction, Layout, Rect, Corner};
-use tui::widgets::{Block, Borders, Widget, Sparkline, Gauge, Row, Table, List, Text};
+use tui::widgets::{Block, Borders, Widget, Sparkline, Gauge, Row, Table, List, Text, Paragraph};
 use tui::style::{Color, Style};
 use tui::backend::Backend;
 use tui::terminal::Frame;
@@ -19,7 +19,7 @@ pub fn define_layout (direction: Direction, constraints: &[Constraint], location
 pub fn render_console<B> (f: &mut Frame<B>, layout: Rect, console: &Console)
         where
         B: Backend {
-            let log_text = console.buffer.iter().map(Text::raw);
+            let log_text = console.history.iter().map(Text::raw);
             List::new(log_text)
                 .block(
                     Block::default()
@@ -90,4 +90,12 @@ pub fn render_processes_layout<B> (f: &mut Frame<B>, layout: &[Rect], processes:
         .widths(&[6, 25, 6, 9])
         .column_spacing(4)
         .render(f, layout[1]);
+}
+
+pub fn render_input_layout<B> (f: &mut Frame<B>, layout: Rect, buffer: &String) 
+    where B: Backend {
+    Paragraph::new([Text::raw(buffer)].iter())
+        .style(Style::default().fg(Color::White))
+        .block(Block::default().borders(Borders::ALL))
+        .render(f, layout);
 }

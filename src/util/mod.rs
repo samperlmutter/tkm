@@ -32,7 +32,7 @@ macro_rules! sort_processes {
             let mut sorted: Vec<Process> = $processes.clone();
             sorted.sort_by(|a, b| a.$field.partial_cmp(&b.$field).unwrap());
             match $sort_order {
-                util::SortDirection::DESC => {
+                SortDirection::DESC => {
                     sorted.reverse();
                 }
                 _ => {}

@@ -6,7 +6,10 @@ use tui::terminal::Frame;
 use pretty_bytes::converter::convert;
 
 use crate::system::System;
-use crate::console::*;
+use crate::console::Console;
+use crate::app::App;
+use crate::util::*;
+use crate::process::Process;
 
 // Helper function to make creating layouts easier
 pub fn define_layout (direction: Direction, constraints: &[Constraint], location: Rect) -> Vec<Rect> {
@@ -31,7 +34,7 @@ pub fn render_console<B> (f: &mut Frame<B>, layout: Rect, console: &Console)
                 .render(f, layout);
 }
 
-pub fn render_sparklines_layout<B> (f: &mut Frame<B>, layout: &[Rect], system: &System) 
+pub fn render_sparklines_layout<B> (f: &mut Frame<B>, layout: &[Rect], system: &System)
     where
     B: Backend {
     Sparkline::default()
@@ -77,9 +80,26 @@ pub fn render_cpu_cores_layout<B> (f: &mut Frame<B>, layout: &[Rect], system: &S
     }
 }
 
-pub fn render_processes_layout<B> (f: &mut Frame<B>, layout: &[Rect], processes: &Vec<Vec<String>>)
+pub fn render_processes_layout<B> (f: &mut Frame<B>, layout: Rect, system: &System, app: &App)
     where
     B: Backend {
+    let mut processes: Vec<Vec<String>>;
+
+    match app.processes_sort_by {
+        SortBy::PID => {
+            processes = sort_processes!(system.processes, Process.pid, app.processes_sort_direction);
+        }
+        SortBy::Name => {
+            processes = sort_processes!(system.processes, Process.name, app.processes_sort_direction);
+        }
+        SortBy::CPU => {
+            processes = sort_processes!(system.processes, Process.cpu, app.processes_sort_direction);
+        }
+        SortBy::Memory => {
+            processes = sort_processes!(system.processes, Process.mem, app.processes_sort_direction);
+        }
+    }
+
     let headers = ["PID", "Name", "CPU", "Memory"];
     let rows = processes.iter().map(|process|
         Row::Data(process.iter())
@@ -89,10 +109,10 @@ pub fn render_processes_layout<B> (f: &mut Frame<B>, layout: &[Rect], processes:
         .block(Block::default().borders(Borders::ALL).title("Processes"))
         .widths(&[6, 25, 6, 9])
         .column_spacing(4)
-        .render(f, layout[1]);
+        .render(f, layout);
 }
 
-pub fn render_input_layout<B> (f: &mut Frame<B>, layout: Rect, buffer: &String) 
+pub fn render_input_layout<B> (f: &mut Frame<B>, layout: Rect, buffer: &String)
     where B: Backend {
     Paragraph::new([Text::raw(buffer)].iter())
         .style(Style::default().fg(Color::White))

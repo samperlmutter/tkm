@@ -24,9 +24,8 @@ use termion::event::Key;
 use crate::system::System;
 use crate::util::*;
 use crate::render::*;
-use crate::console::*;
-use crate::app::*;
-use crate::process::Process;
+use crate::console::Console;
+use crate::app::App;
 
 
 fn main() -> Result<(), failure::Error> {
@@ -85,24 +84,9 @@ fn main() -> Result<(), failure::Error> {
         terminal.draw(|mut f| {
             render_sparklines_layout(&mut f, &sparklines_layout, &system_cache);
             render_cpu_cores_layout(&mut f, &cpu_cores_layout, &system_cache);
+            render_processes_layout(&mut f, main_view_layout[1], &system_cache, &app);
             // render_console(&mut f, main_view_layout[2], &console);
             render_input_layout(&mut f, main_view_layout[2], &console.buffer);
-
-            // Controls how the processes list is sorted
-            match app.processes_sort_by {
-                SortBy::PID => {
-                    render_processes_layout(&mut f, &main_view_layout, &sort_processes!(system_cache.processes, Process.pid, app.processes_sort_direction));
-                }
-                SortBy::Name => {
-                    render_processes_layout(&mut f, &main_view_layout, &sort_processes!(system_cache.processes, Process.name, app.processes_sort_direction));
-                }
-                SortBy::CPU => {
-                    render_processes_layout(&mut f, &main_view_layout, &sort_processes!(system_cache.processes, Process.cpu, app.processes_sort_direction));
-                }
-                SortBy::Memory => {
-                    render_processes_layout(&mut f, &main_view_layout, &sort_processes!(system_cache.processes, Process.mem, app.processes_sort_direction));
-                }
-            }
         })?;
 
         // Positions cursor after user input

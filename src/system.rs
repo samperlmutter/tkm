@@ -16,7 +16,9 @@ pub struct System {
 }
 
 impl System {
-    pub fn new(system: sysinfo::System, initial_size: u16) -> Result<System, failure::Error> {
+    pub fn new(initial_size: u16) -> Result<System, failure::Error> {
+        let system = sysinfo::System::new();
+
         let history_width = initial_size / 2;
 
         // Overall CPU usage
@@ -41,7 +43,7 @@ impl System {
         })
     }
 
-    pub fn update(&mut self) -> Result<(), failure::Error> {
+    pub fn update(&mut self) -> Result<System, failure::Error> {
         self.system.refresh_all();
         let mem_info = sys_info::mem_info()?;
 
@@ -71,6 +73,17 @@ impl System {
             )
             .collect();
 
-        Ok(())
+        Ok(System {
+            system: sysinfo::System::new(),
+            cpu_usage_history: self.cpu_usage_history.clone(),
+            cpu_current_usage: self.cpu_current_usage,
+            cpu_num_cores: self.cpu_num_cores,
+            mem_total: self.mem_total,
+            mem_free: self.mem_free,
+            mem_used: self.mem_used,
+            mem_usage_history: self.mem_usage_history.clone(),
+            cpu_core_usages: self.cpu_core_usages.clone(),
+            processes: self.processes.clone()
+        })
     }
 }

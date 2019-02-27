@@ -1,5 +1,3 @@
-use sysinfo::Process as SIProcess;
-
 #[derive(Clone)]
 pub struct Process {
     pub pid: i32,
@@ -9,12 +7,12 @@ pub struct Process {
 }
 
 impl Process {
-    pub fn new(si_process: &SIProcess) -> Process {
+    pub fn new(process: &sysinfo::Process) -> Process {
         Process {
-            pid: si_process.pid,
-            name: si_process.name.clone(),
-            cpu: si_process.cpu_usage,
-            mem: si_process.memory
+            pid: process.pid,
+            name: process.name,
+            cpu: process.cpu_usage,
+            mem: process.memory
         }
     }
 

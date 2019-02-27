@@ -8,6 +8,10 @@ mod process;
 
 use std::io;
 use std::io::Write;
+use std::thread;
+use std::sync::mpsc;
+use std::time::Duration;
+
 use tui::backend::TermionBackend;
 use tui::layout::{Constraint, Direction};
 use tui::Terminal;
@@ -16,7 +20,6 @@ use termion::cursor::Goto;
 use termion::input::MouseTerminal;
 use termion::screen::AlternateScreen;
 use termion::event::Key;
-use sysinfo::SystemExt;
 
 use crate::system::System;
 use crate::util::*;
@@ -35,25 +38,43 @@ fn main() -> Result<(), failure::Error> {
     let events = event::Events::new();
 
     let mut console = Console::new();
-    let mut system = System::new(sysinfo::System::new(), terminal.size()?.width)?;
     let mut app = App::new();
+    let mut system = System::new(terminal.size()?.width)?;
+    let mut system_cache = System::new(terminal.size()?.width)?;
+
+    // Sets up separate thread for polling system resources
+    let (system_tx, system_rx) = mpsc::channel();
+    thread::spawn(move || {
+        loop {
+            let system_update = system.update().unwrap();
+            system_tx.send(system_update).unwrap();
+            thread::sleep(Duration::from_secs(1));
+        }
+    });
 
     loop {
-        system.update()?;
         app.size = terminal.size()?;
 
-        // Resizes the main view to make room for the console if it's showing
-        let main_view_constraints = if console.visible {
-            vec![Constraint::Percentage(25), Constraint::Percentage(45), Constraint::Min(0), Constraint::Length(2)]
-        } else {
-            vec![Constraint::Percentage(25), Constraint::Min(0), Constraint::Length(3)]
-        };
+        if let Some(updated_system) = system_rx.try_recv().ok() {
+            system_cache = updated_system;
+        }
+        // Defines the upper area containing the cpu cores and graphs. Horizontally ordered
         let system_overview_constrants = vec![Constraint::Percentage(50); 2];
+
+        // Defines areas for the cpu and memory graphs. Verically ordered
         let sparklines_constraints = vec![Constraint::Percentage(50); 2];
 
-        // Creates as many constraints as there are cpu cores
-        let mut cpu_core_contraints = vec![Constraint::Length(3); system.cpu_num_cores];
+        // Creates as many constraints as there are cpu cores. Verically ordered
+        let mut cpu_core_contraints = vec![Constraint::Length(3); system_cache.cpu_num_cores];
         cpu_core_contraints.push(Constraint::Min(0));
+
+        // Resizes the main view to make room for the console if it's showing. Verically ordered
+        // let main_view_constraints = if console.visible {
+        //     vec![Constraint::Length(((cpu_core_contraints.len() - 1) * 3) as u16), Constraint::Percentage(45), Constraint::Min(0), Constraint::Length(3)]
+        // } else {
+        //     vec![Constraint::Length(((cpu_core_contraints.len() - 1) * 3) as u16), Constraint::Min(0), Constraint::Length(3)]
+        // };
+        let main_view_constraints = vec![Constraint::Length(((cpu_core_contraints.len() - 1) * 3) as u16), Constraint::Min(0), Constraint::Length(3)];
 
         // Define layouts for the different sections of the display
         let main_view_layout = define_layout(Direction::Vertical, &main_view_constraints, terminal.size()?);
@@ -62,28 +83,29 @@ fn main() -> Result<(), failure::Error> {
         let cpu_cores_layout = define_layout(Direction::Vertical, &cpu_core_contraints, system_overview_layout[0]);
 
         terminal.draw(|mut f| {
-            render_sparklines_layout(&mut f, &sparklines_layout, &system);
-            render_cpu_cores_layout(&mut f, &cpu_cores_layout, &system);
+            render_sparklines_layout(&mut f, &sparklines_layout, &system_cache);
+            render_cpu_cores_layout(&mut f, &cpu_cores_layout, &system_cache);
             // render_console(&mut f, main_view_layout[2], &console);
             render_input_layout(&mut f, main_view_layout[2], &console.buffer);
 
             // Controls how the processes list is sorted
             match app.processes_sort_by {
                 SortBy::PID => {
-                    render_processes_layout(&mut f, &main_view_layout, &sort_processes!(system.processes, Process.pid, app.processes_sort_direction));
+                    render_processes_layout(&mut f, &main_view_layout, &sort_processes!(system_cache.processes, Process.pid, app.processes_sort_direction));
                 }
                 SortBy::Name => {
-                    render_processes_layout(&mut f, &main_view_layout, &sort_processes!(system.processes, Process.name, app.processes_sort_direction));
+                    render_processes_layout(&mut f, &main_view_layout, &sort_processes!(system_cache.processes, Process.name, app.processes_sort_direction));
                 }
                 SortBy::CPU => {
-                    render_processes_layout(&mut f, &main_view_layout, &sort_processes!(system.processes, Process.cpu, app.processes_sort_direction));
+                    render_processes_layout(&mut f, &main_view_layout, &sort_processes!(system_cache.processes, Process.cpu, app.processes_sort_direction));
                 }
                 SortBy::Memory => {
-                    render_processes_layout(&mut f, &main_view_layout, &sort_processes!(system.processes, Process.mem, app.processes_sort_direction));
+                    render_processes_layout(&mut f, &main_view_layout, &sort_processes!(system_cache.processes, Process.mem, app.processes_sort_direction));
                 }
             }
         })?;
 
+        // Positions cursor after user input
         write!(
             terminal.backend_mut(),
             "{}",

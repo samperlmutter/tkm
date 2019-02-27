@@ -100,7 +100,7 @@ fn main() -> Result<(), failure::Error> {
         if let event::Event::Input(input) = events.next()? {
             match input {
                 // Quit the program
-                Key::Char('q') => {
+                Key::Ctrl('c') => {
                     break;
                 }
                 // Toggle showing the debugging log

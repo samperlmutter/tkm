@@ -61,7 +61,6 @@ fn main() -> Result<(), failure::Error> {
         let sparklines_layout = define_layout(Direction::Vertical, &sparklines_constraints, system_overview_layout[1]);
         let cpu_cores_layout = define_layout(Direction::Vertical, &cpu_core_contraints, system_overview_layout[0]);
 
-        terminal.hide_cursor()?;
         terminal.draw(|mut f| {
             render_sparklines_layout(&mut f, &sparklines_layout, &system);
             render_cpu_cores_layout(&mut f, &cpu_cores_layout, &system);
@@ -85,13 +84,13 @@ fn main() -> Result<(), failure::Error> {
             }
         })?;
 
-        terminal.show_cursor()?;
         write!(
             terminal.backend_mut(),
             "{}",
-            Goto(1 + console.buffer.len() as u16, app.size.height)
+            Goto(2 + console.buffer.len() as u16, app.size.height - 1)
         )?;
 
+        terminal.show_cursor()?;
         if let event::Event::Input(input) = events.next()? {
             match input {
                 // Quit the program
@@ -124,6 +123,7 @@ fn main() -> Result<(), failure::Error> {
                 _ => {}
             }
         }
+        terminal.hide_cursor()?;
     }
 
     Ok(())

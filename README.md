@@ -5,5 +5,6 @@ A terminal based **t**as**k** **m**anager.
 
 # Running locally
 1. Make sure you have [rust installed](https://doc.rust-lang.org/book/ch01-01-installation.html) and your toolchain is set to nightly
+    - You can set your default toolchain to nightly by running `rustup default nightly`
 2. In the root of the project, run `cargo run` to start the program
     - If you want to be able to run tkm from anywhere, run `cargo install --path .` from the root directory

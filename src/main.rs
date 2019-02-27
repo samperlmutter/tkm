@@ -69,7 +69,7 @@ fn main() -> Result<(), failure::Error> {
 
         // Resizes the main view to make room for the console if it's showing. Verically ordered
         // let main_view_constraints = if console.visible {
-        //     vec![Constraint::Length(((cpu_core_contraints.len() - 1) * 3) as u16), Constraint::Percentage(45), Constraint::Min(0), Constraint::Length(3)]
+        //     vec![Constraint::Length(((cpu_core_contraints.len() - 1) * 3) as u16), Constraint::Percentage(45), Constraint::Min(0)]
         // } else {
         //     vec![Constraint::Length(((cpu_core_contraints.len() - 1) * 3) as u16), Constraint::Min(0), Constraint::Length(3)]
         // };
@@ -125,6 +125,9 @@ fn main() -> Result<(), failure::Error> {
                 // Enter input into the console
                 Key::Char(c) => {
                     console.buffer.push(c);
+                }
+                Key::Backspace => {
+                    console.buffer.pop();
                 }
                 _ => {}
             }

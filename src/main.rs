@@ -24,7 +24,6 @@ use termion::event::Key;
 use crate::system::System;
 use crate::util::*;
 use crate::render::*;
-use crate::console::Console;
 use crate::app::App;
 
 
@@ -36,7 +35,6 @@ fn main() -> Result<(), failure::Error> {
     let mut terminal = Terminal::new(backend)?;
     let events = event::Events::new();
 
-    let mut console = Console::new();
     let mut app = App::new();
     let mut system = System::new(terminal.size()?.width)?;
     let mut system_cache = System::new(terminal.size()?.width)?;
@@ -54,7 +52,7 @@ fn main() -> Result<(), failure::Error> {
     loop {
         app.size = terminal.size()?;
 
-        if let Some(updated_system) = system_rx.try_recv().ok() {
+        if let Ok(updated_system) = system_rx.try_recv() {
             system_cache = updated_system;
         }
         // Defines the upper area containing the cpu cores and graphs. Horizontally ordered
@@ -67,14 +65,12 @@ fn main() -> Result<(), failure::Error> {
         let mut cpu_core_contraints = vec![Constraint::Length(3); system_cache.cpu_num_cores];
         cpu_core_contraints.push(Constraint::Min(0));
 
-        // Resizes the main view to make room for the console if it's showing. Verically ordered
-        // let main_view_constraints = if console.visible {
-        //     vec![Constraint::Length(((cpu_core_contraints.len() - 1) * 3) as u16), Constraint::Percentage(45), Constraint::Min(0)]
-        // } else {
-        //     vec![Constraint::Length(((cpu_core_contraints.len() - 1) * 3) as u16), Constraint::Min(0), Constraint::Length(3)]
-        // };
-        // Sets the height of the upper area to be tall enough for all the cpu cores. Vertically ordered
-        let main_view_constraints = vec![Constraint::Length(((cpu_core_contraints.len() - 1) * 3) as u16), Constraint::Min(0), Constraint::Length(3)];
+        // Sets the height of the upper area to be tall enough for all the cpu cores and resizes the main view to make room for the console if it's showing. Verically ordered
+        let main_view_constraints = if app.console.visible {
+            vec![Constraint::Length(((cpu_core_contraints.len() - 1) * 3) as u16), Constraint::Min(0), Constraint::Percentage(20), Constraint::Length(3)]
+        } else {
+            vec![Constraint::Length(((cpu_core_contraints.len() - 1) * 3) as u16), Constraint::Min(0), Constraint::Percentage(0), Constraint::Length(3)]
+        };
 
         // Define layouts for the different sections of the display
         let main_view_layout = define_layout(Direction::Vertical, &main_view_constraints, terminal.size()?);
@@ -86,15 +82,15 @@ fn main() -> Result<(), failure::Error> {
             render_sparklines_layout(&mut f, &sparklines_layout, &system_cache);
             render_cpu_cores_layout(&mut f, &cpu_cores_layout, &system_cache);
             render_processes_layout(&mut f, main_view_layout[1], &system_cache, &app);
-            // render_console(&mut f, main_view_layout[2], &console);
-            render_input_layout(&mut f, main_view_layout[2], &console.buffer);
+            render_console_layout(&mut f, main_view_layout[2], &app.console);
+            render_input_layout(&mut f, main_view_layout[3], &app.console.input);
         })?;
 
         // Positions cursor after user input
         write!(
             terminal.backend_mut(),
             "{}",
-            Goto(2 + console.buffer.len() as u16, app.size.height - 1)
+            Goto(2 + app.console.input.len() as u16, app.size.height - 1)
         )?;
 
         terminal.show_cursor()?;
@@ -105,9 +101,9 @@ fn main() -> Result<(), failure::Error> {
                     break;
                 }
                 // Toggle showing the debugging log
-                // Key::Char('/') => {
-                //     console.toggle_visibility();
-                // }
+                Key::Char('/') => {
+                    app.console.toggle_visibility();
+                }
                 // Sort processes by CPU usage
                 Key::Char('c') => {
                     app.processes_sort_by = SortBy::CPU;
@@ -123,12 +119,16 @@ fn main() -> Result<(), failure::Error> {
                     app.processes_sort_by = SortBy::PID;
                     app.toggle_sort_direction();
                 }
-                // Enter input into the console
+                // Attempt to process current input as command
+                Key::Char('\n') => {
+                    app.process_command();
+                }
+                // Capture text input into the console
                 Key::Char(c) => {
-                    console.buffer.push(c);
+                    app.console.append_input(c);
                 }
                 Key::Backspace => {
-                    console.buffer.pop();
+                    app.console.backspace();
                 }
                 _ => {}
             }

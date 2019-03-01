@@ -3,7 +3,7 @@ use std::fmt::Display;
 pub struct Console {
     pub visible: bool,
     pub history: Vec<String>,
-    pub buffer: String
+    pub input: String
 }
 
 impl Console {
@@ -11,7 +11,7 @@ impl Console {
         Console {
             history: Vec::<String>::new(),
             visible: false,
-            buffer: String::new()
+            input: String::new()
         }
     }
 
@@ -24,5 +24,17 @@ impl Console {
 
     pub fn toggle_visibility(&mut self) {
         self.visible = !self.visible;
+    }
+
+    pub fn append_input(&mut self, c: char) {
+        self.input.push(c);
+    }
+
+    pub fn clear_input(&mut self) -> String {
+        self.input.drain(..).collect()
+    }
+
+    pub fn backspace(&mut self) {
+        self.input.pop();
     }
 }

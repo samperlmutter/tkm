@@ -19,7 +19,7 @@ pub fn define_layout (direction: Direction, constraints: &[Constraint], location
         .split(location)
 }
 
-pub fn render_console<B> (f: &mut Frame<B>, layout: Rect, console: &Console)
+pub fn render_console_layout<B> (f: &mut Frame<B>, layout: Rect, console: &Console)
         where
         B: Backend {
             let log_text = console.history.iter().map(Text::raw);
@@ -28,7 +28,6 @@ pub fn render_console<B> (f: &mut Frame<B>, layout: Rect, console: &Console)
                     Block::default()
                         .borders(Borders::ALL)
                         .title("Console")
-                        .style(Style::default().bg(Color::Black))
                 )
                 .start_corner(Corner::BottomLeft)
                 .render(f, layout);
@@ -112,10 +111,10 @@ pub fn render_processes_layout<B> (f: &mut Frame<B>, layout: Rect, system: &Syst
         .render(f, layout);
 }
 
-pub fn render_input_layout<B> (f: &mut Frame<B>, layout: Rect, buffer: &String)
+pub fn render_input_layout<B> (f: &mut Frame<B>, layout: Rect, buffer: &str)
     where B: Backend {
     Paragraph::new([Text::raw(buffer)].iter())
         .style(Style::default().fg(Color::White))
-        .block(Block::default().borders(Borders::ALL))
+        .block(Block::default().borders(Borders::ALL).title("Input"))
         .render(f, layout);
 }

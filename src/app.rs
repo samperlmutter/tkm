@@ -1,10 +1,12 @@
 use crate::util::*;
+use crate::console::Console;
 
 pub struct App {
     pub mode: Mode,
     pub processes_sort_by: SortBy,
     pub processes_sort_direction: SortDirection,
-    pub size: tui::layout::Rect
+    pub size: tui::layout::Rect,
+    pub console: Console
 }
 
 impl App {
@@ -13,7 +15,8 @@ impl App {
             mode: Mode::Main,
             processes_sort_by: SortBy::CPU,
             processes_sort_direction: SortDirection::DESC,
-            size: tui::layout::Rect::new(0, 0, 0, 0)
+            size: tui::layout::Rect::new(0, 0, 0, 0),
+            console: Console::new()
         }
     }
 
@@ -26,5 +29,10 @@ impl App {
                 self.processes_sort_direction = SortDirection::ASC;
             }
         }
+    }
+
+    pub fn process_command(&mut self) {
+        let command = self.console.clear_input();
+        self.console.history.insert(0, command);
     }
 }

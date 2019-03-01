@@ -1,3 +1,5 @@
+use sysinfo::ProcessExt;
+
 #[derive(Clone)]
 pub struct Process {
     pub pid: i32,
@@ -9,10 +11,10 @@ pub struct Process {
 impl Process {
     pub fn new(process: &sysinfo::Process) -> Process {
         Process {
-            pid: process.pid,
-            name: process.name.clone(),
-            cpu: process.cpu_usage,
-            mem: process.memory
+            pid: process.pid(),
+            name: process.name().to_string(),
+            cpu: process.cpu_usage(),
+            mem: process.memory()
         }
     }
 

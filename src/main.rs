@@ -73,6 +73,7 @@ fn main() -> Result<(), failure::Error> {
         // } else {
         //     vec![Constraint::Length(((cpu_core_contraints.len() - 1) * 3) as u16), Constraint::Min(0), Constraint::Length(3)]
         // };
+        // Sets the height of the upper area to be tall enough for all the cpu cores. Vertically ordered
         let main_view_constraints = vec![Constraint::Length(((cpu_core_contraints.len() - 1) * 3) as u16), Constraint::Min(0), Constraint::Length(3)];
 
         // Define layouts for the different sections of the display

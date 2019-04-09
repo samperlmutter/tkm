@@ -31,7 +31,9 @@ impl Console {
     }
 
     pub fn clear_input(&mut self) -> String {
-        self.input.drain(..).collect()
+        let buffer = self.input.drain(..).collect::<String>();
+        self.write(buffer.clone());
+        buffer
     }
 
     pub fn backspace(&mut self) {

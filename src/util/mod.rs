@@ -1,5 +1,7 @@
 #![allow(warnings)]
 
+use std::str::FromStr;
+
 pub mod event;
 
 pub struct TabsState<'a> {
@@ -31,11 +33,8 @@ macro_rules! sort_processes {
         {
             let mut sorted: Vec<Process> = $processes.clone();
             sorted.sort_by(|a, b| a.$field.partial_cmp(&b.$field).unwrap());
-            match $sort_order {
-                SortDirection::DESC => {
-                    sorted.reverse();
-                }
-                _ => {}
+            if let SortDirection::DESC = $sort_order {
+                sorted.reverse();
             }
 
             sorted.iter()
@@ -45,11 +44,42 @@ macro_rules! sort_processes {
     };
 }
 
+macro_rules! hashmap {
+    (@single $($x:tt)*) => (());
+    (@count $($rest:expr),*) => (<[()]>::len(&[$(hashmap!(@single $rest)),*]));
+
+    ($($key:expr => $value:expr,)+) => { hashmap!($($key => $value),+) };
+    ($($key:expr => $value:expr),*) => {
+        {
+            let _cap = hashmap!(@count $($key),*);
+            let mut _map = ::std::collections::HashMap::with_capacity(_cap);
+            $(
+                let _ = _map.insert($key, $value);
+            )*
+            _map
+        }
+    };
+}
+
 pub enum SortBy {
     PID,
     Name,
     CPU,
     Memory
+}
+
+impl FromStr for SortBy {
+    type Err = ();
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "pid" => Ok(SortBy::PID),
+            "name" => Ok(SortBy::Name),
+            "cpu" => Ok(SortBy::CPU),
+            "mem" => Ok(SortBy::Memory),
+            _ => Err(())
+        }
+    }
 }
 
 pub enum SortDirection {

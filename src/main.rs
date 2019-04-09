@@ -5,6 +5,7 @@ mod render;
 mod console;
 mod app;
 mod process;
+mod command;
 
 use std::io;
 use std::io::Write;
@@ -96,40 +97,32 @@ fn main() -> Result<(), failure::Error> {
         terminal.show_cursor()?;
         if let event::Event::Input(input) = events.next()? {
             match input {
+
                 // Quit the program
                 Key::Ctrl('c') => {
                     break;
                 }
+
                 // Toggle showing the debugging log
                 Key::Char('/') => {
+                    app.processes_sort_by = SortBy::CPU;
                     app.console.toggle_visibility();
                 }
-                // Sort processes by CPU usage
-                Key::Char('c') => {
-                    app.processes_sort_by = SortBy::CPU;
-                    app.toggle_sort_direction();
-                }
-                // Sort processes by memory usage
-                Key::Char('m') => {
-                    app.processes_sort_by = SortBy::Memory;
-                    app.toggle_sort_direction();
-                }
-                // Sort processes by PID
-                Key::Char('p') => {
-                    app.processes_sort_by = SortBy::PID;
-                    app.toggle_sort_direction();
-                }
+
                 // Attempt to process current input as command
                 Key::Char('\n') => {
                     app.process_command();
                 }
+
                 // Capture text input into the console
                 Key::Char(c) => {
                     app.console.append_input(c);
                 }
+
                 Key::Backspace => {
                     app.console.backspace();
                 }
+
                 _ => {}
             }
         }

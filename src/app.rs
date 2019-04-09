@@ -1,5 +1,6 @@
 use crate::util::*;
 use crate::console::Console;
+use crate::command::Command;
 
 pub struct App {
     pub mode: Mode,
@@ -32,7 +33,14 @@ impl App {
     }
 
     pub fn process_command(&mut self) {
-        let command = self.console.clear_input();
-        self.console.history.insert(0, command);
+        let input = self.console.clear_input();
+        if let Some((cmd, args)) = input.split_ascii_whitespace().collect::<Vec<&str>>().split_first() {
+            match *cmd {
+                "sort" => Command::Sort(args[0], self).exec(),
+                _ => self.console.write(format!("Command not found: {}", cmd))
+            }
+        } else {
+            self.console.write("Error parsing command".to_string());
+        }
     }
 }

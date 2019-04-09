@@ -1,6 +1,6 @@
 [package]
 name = "tkm"
-version = "0.1.0"
+version = "0.8.0"
 authors = ["Sam Perlmutter <sam.perlmutter227@gmail.com>"]
 edition = "2018"
 
@@ -8,6 +8,5 @@ edition = "2018"
 tui = "0.4.0"
 termion = "1.5"
 sysinfo = "0.8.*"
-itertools = "0.8"
 failure = "0.1"
 pretty-bytes = "*"

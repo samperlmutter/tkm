@@ -28,7 +28,7 @@ use crate::render::*;
 use crate::app::App;
 
 
-fn main() -> Result<(), failure::Error> {
+fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
     let stdout = io::stdout().into_raw_mode()?;
     let stdout = MouseTerminal::from(stdout);
     let stdout = AlternateScreen::from(stdout);
@@ -37,14 +37,14 @@ fn main() -> Result<(), failure::Error> {
     let events = event::Events::new();
 
     let mut app = App::new();
-    let mut system = System::new(terminal.size()?.width)?;
-    let mut system_cache = System::new(terminal.size()?.width)?;
+    let mut system = System::new(terminal.size()?.width);
+    let mut system_cache = System::new(terminal.size()?.width);
 
     // Sets up separate thread for polling system resources
     let (system_tx, system_rx) = mpsc::channel();
     thread::spawn(move || {
         loop {
-            let system_update = system.update().unwrap();
+            let system_update = system.update();
             system_tx.send(system_update).unwrap();
             thread::sleep(Duration::from_secs(1));
         }

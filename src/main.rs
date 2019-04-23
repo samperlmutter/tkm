@@ -6,6 +6,7 @@ mod console;
 mod app;
 mod process;
 mod command;
+mod command_handler;
 
 use std::io;
 use std::io::Write;
@@ -27,6 +28,8 @@ use crate::util::*;
 use crate::render::*;
 use crate::app::App;
 
+#[macro_use]
+extern crate nom;
 
 fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
     let stdout = io::stdout().into_raw_mode()?;
@@ -109,14 +112,13 @@ fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
                     app.console.toggle_visibility();
                 }
 
-                // Attempt to process current input as command
-                Key::Char('\n') => {
-                    app.process_command();
-                }
-
                 // Capture text input into the console
                 Key::Char(c) => {
                     app.console.append_input(c);
+                    // If enter was pressed, attempt to process current input as command
+                    if c == '\n' {
+                        app.process_command();
+                    }
                 }
 
                 Key::Backspace => {

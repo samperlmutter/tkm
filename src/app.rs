@@ -1,6 +1,6 @@
 use crate::util::*;
 use crate::console::Console;
-use crate::command::Command;
+use crate::command_handler::*;
 
 pub struct App {
     pub mode: Mode,
@@ -21,6 +21,7 @@ impl App {
         }
     }
 
+    // Toggles the soring of processes between ascending and descending
     pub fn toggle_sort_direction(&mut self) {
         match self.processes_sort_direction {
             SortDirection::ASC => {
@@ -32,15 +33,9 @@ impl App {
         }
     }
 
+    // Processes the current console buffer as a command
     pub fn process_command(&mut self) {
         let input = self.console.clear_input();
-        if let Some((cmd, args)) = input.split_ascii_whitespace().collect::<Vec<&str>>().split_first() {
-            match *cmd {
-                "sort" => Command::Sort(args[0], self).exec(),
-                _ => self.console.write(format!("Command not found: {}", cmd))
-            }
-        } else {
-            self.console.write("Error parsing command".to_string());
-        }
+        self.console.write(format!("{:?}", parse_cmd(input.as_bytes())));
     }
 }

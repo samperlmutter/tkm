@@ -44,23 +44,6 @@ macro_rules! sort_processes {
     };
 }
 
-macro_rules! hashmap {
-    (@single $($x:tt)*) => (());
-    (@count $($rest:expr),*) => (<[()]>::len(&[$(hashmap!(@single $rest)),*]));
-
-    ($($key:expr => $value:expr,)+) => { hashmap!($($key => $value),+) };
-    ($($key:expr => $value:expr),*) => {
-        {
-            let _cap = hashmap!(@count $($key),*);
-            let mut _map = ::std::collections::HashMap::with_capacity(_cap);
-            $(
-                let _ = _map.insert($key, $value);
-            )*
-            _map
-        }
-    };
-}
-
 pub enum SortBy {
     PID,
     Name,
@@ -91,3 +74,53 @@ pub enum Mode {
     Console,
     Main
 }
+
+#[derive(PartialEq, Debug, Clone, Copy)]
+pub enum CmdError {
+    InvalidArgs = 1000,
+    InvalidCmd,
+    ParseErr
+}
+
+impl From<u32> for CmdError {
+    fn from(i: u32) -> Self {
+        match i {
+            1000 => CmdError::InvalidArgs,
+            1001 => CmdError::InvalidCmd,
+            _ | 1002 => CmdError::ParseErr
+        }
+    }
+}
+// error_chain!{
+
+//     foreign_links {
+//         Nom(::nom::Err);
+//     }
+
+//     types {
+//         InvalidArgs, InvalidCmd, ParseErr;
+//     }
+
+//     errors {
+//         InvalidArgs(expected: u32, found: u32) {
+//             description("Invalid number of arguments")
+//             display("Wrong number of arguments: expected {}, found {}", expected, found)
+//         }
+
+//         InvalidCmd(cmd: String) {
+//             description("Invalid command")
+//             display("Invalid command: {}", cmd)
+//         }
+
+//         ParseErr(err: String) {
+//             description("An error occurred while parsing")
+//             display("Parsing error: {}", err)
+//         }
+//     }
+// }
+
+// impl From<CmdError> for ErrorKind {
+//     fn from(err: CmdError) -> Self {
+//         ErrorKind::
+//     }
+// }

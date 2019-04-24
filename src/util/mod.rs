@@ -77,7 +77,7 @@ pub enum Mode {
 
 #[derive(PartialEq, Debug, Clone, Copy)]
 pub enum CmdError {
-    InvalidArgs = 1000,
+    InvalidArgs(u32, u32),
     InvalidCmd,
     ParseErr
 }
@@ -85,9 +85,19 @@ pub enum CmdError {
 impl From<u32> for CmdError {
     fn from(i: u32) -> Self {
         match i {
-            1000 => CmdError::InvalidArgs,
+            1000 => CmdError::InvalidArgs(0, 0),
             1001 => CmdError::InvalidCmd,
             _ | 1002 => CmdError::ParseErr
+        }
+    }
+}
+
+impl CmdError {
+    pub fn display(&self) -> String {
+        match self {
+            CmdError::InvalidArgs(exp, rec) => format!("Wrong number of arguments: expected {}, found {}", exp, rec),
+            CmdError::InvalidCmd => format!("Unknown command"),
+            CmdError::ParseErr => format!("Error during parsing")
         }
     }
 }

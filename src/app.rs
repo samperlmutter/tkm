@@ -35,7 +35,43 @@ impl App {
 
     // Processes the current console buffer as a command
     pub fn process_command(&mut self) {
+        use std::fs::OpenOptions;
+        use std::io::Write;
+
+        let mut file = OpenOptions::new()
+                    .read(true)
+                    .write(true)
+                    .create(true)
+                    .append(true)
+                    .open("foo.txt")
+                    .expect("Unable to write data");
+
         let input = self.console.clear_input();
-        self.console.write(format!("{:?}", parse_cmd(input.as_bytes())));
+
+        match parse_cmd(input.as_bytes()) {
+            Ok((_, cmd)) => {
+                self.console.write(format!("{:?}", cmd));
+            }
+            Err(e) => {
+                match e {
+                    nom::Err::Failure(err) | nom::Err::Error(err) => {
+                        match err {
+                            nom::Context::Code(_, nom::ErrorKind::Custom(CmdError::InvalidArgs)) => {
+                                self.console.write("Invalid number of arguments");
+                            }
+                            nom::Context::Code(_, nom::ErrorKind::Alt) => {
+                                self.console.write("Unknown command");
+                            }
+                            nom::Context::Code(_, nom::ErrorKind::Custom(CmdError::ParseErr)) | _ => {
+                                self.console.write("Error during parsing");
+                            }
+                        }
+                        // file.write(format!("{} | {:?}\n", input, err).as_bytes()).expect("Unable to write data");
+                    }
+                    _ => {}
+                }
+            }
+        }
+        file.write(format!("{} | {:?}\n", input, parse_cmd(input.as_bytes())).as_bytes()).expect("Unable to write data");
     }
 }

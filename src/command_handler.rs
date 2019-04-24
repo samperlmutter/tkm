@@ -8,80 +8,59 @@ pub struct Cmd {
 
 named!(pub parse_args<&[u8], Vec<String>>,
     complete!(
-        map!(separated_list!(nom::space, nom::alpha), |args| {
+        map!(separated_list!(nom::space, nom::alpha), |args|
             args.iter()
             .map(|arg| String::from_utf8((*arg).to_vec()).unwrap())
             .collect()
-        })
+        )
     )
 );
 
 pub fn parse_cmd(buf: &[u8]) -> nom::IResult<&[u8], Cmd, CmdError> {
     do_parse!(
         buf,
-        cmd: return_error!(nom::ErrorKind::Custom(CmdError::InvalidCmd),
-            fix_error!(CmdError,
+        cmd: /*return_error!(nom::ErrorKind::Custom(CmdError::InvalidCmd),*/
+            // fix_error!(CmdError,
                 alt!(
-                    tag!("sort") |
-                    tag!("kill")
-                )
-            )
+                    do_parse!(
+                        cmd: fix_error!(CmdError, tag!("sort")) >>
+                        fix_error!(CmdError, take!(1)) >>
+                        args: return_error!(nom::ErrorKind::Custom(CmdError::InvalidArgs),
+                            fix_error!(CmdError, parse_args)
+                        ) >>
+                        return_error!(nom::ErrorKind::Custom(CmdError::InvalidArgs),
+                        fix_error!(CmdError, cond_reduce!(args.len() == 1, call!(sort)))) >>
+                        (Cmd {
+                            cmd: String::from_utf8(cmd.to_vec()).unwrap(),
+                            args: args
+                        })
+                    ) |
+                    do_parse!(
+                        cmd: fix_error!(CmdError, tag!("kill")) >>
+                        fix_error!(CmdError, take!(1)) >>
+                        args: return_error!(nom::ErrorKind::Custom(CmdError::InvalidArgs),
+                            fix_error!(CmdError, parse_args)
+                        ) >>
+                        return_error!(nom::ErrorKind::Custom(CmdError::InvalidArgs),
+                        fix_error!(CmdError, cond_reduce!(args.len() == 1, call!(kill)))) >>
+                        (Cmd {
+                            cmd: String::from_utf8(cmd.to_vec()).unwrap(),
+                            args: args
+                        })
+                    )
+                // )
+            // )
         ) >>
-        return_error!(nom::ErrorKind::Custom(CmdError::ParseErr),
-            fix_error!(CmdError, take!(1))
-        ) >>
-        args: add_return_error!(nom::ErrorKind::Custom(CmdError::ParseErr),
-            fix_error!(CmdError, parse_args)
-        ) >>
-        (Cmd {
-            cmd: String::from_utf8(cmd.to_vec()).unwrap(),
-            args: args
-        })
+        (cmd)
     )
-    // do_parse!(
-    //     buf,
-    //     result: alt!(
-    //         do_parse!(
-    //             cmd: tag!("sort") >>
-    //             take!(1) >>
-    //             ws: separated_list!(nom::space, nom::alpha) >>
-    //             (Cmd {cmd: String::from_utf8(cmd.to_vec()).unwrap(), args: ws})
-    //         ) |
-    //         do_parse!(
-    //             cmd: tag!("kill") >>
-    //             take!(1) >>
-    //             ws: separated_list!(nom::space, nom::alpha) >>
-    //             (Cmd {cmd: String::from_utf8(cmd.to_vec()).unwrap(), args: ws})
-    //         )
-    //     ) >>
-    //     (result)
-    // )
-
-    // Cmd {
-    //     cmd: String::from_utf8((*cmd).to_vec()).unwrap(),
-    //     args: (*args).to_vec().iter().map(|arg| String::from_utf8((*arg).to_vec()).unwrap()).collect()
-    // }
-    // if let Some((cmd, args)) = tokens.split_first() {
-
-    // }
-    // do_parse!(tokens,
-    //     alt!(
-    //         do_parse!(
-    //             cmd: tag!("sort") >>
-    //             args: many0!(map_res!(nom::alpha, std::str::from_utf8)) >>
-    //             ((cmd, args))
-    //         )
-    //     )
-    // )
-    // Ok(())
 }
 
-// named!(pub parse_cmd<(&[u8], Vec<&str>)>,
-//     alt!(
-//         do_parse!(
-//             cmd: tag!("sort") >>
-//             args: many0!(map_res!(nom::alpha, std::str::from_utf8)) >>
-//             ((cmd, args))
-//         )
-//     )
-// );
+fn sort(i: &[u8]) -> nom::IResult<&[u8], String, CmdError> {
+    Ok((i, "Success".to_string()))
+    // Err(nom::Err::Error(nom::Context::Code(i, nom::ErrorKind::Custom(CmdError::InvalidArgs))))
+}
+
+fn kill(i: &[u8]) -> nom::IResult<&[u8], String, CmdError> {
+    Ok((i, "Success".to_string()))
+    // Err(nom::Err::Error(nom::Context::Code(i, nom::ErrorKind::Custom(CmdError::InvalidArgs))))
+}

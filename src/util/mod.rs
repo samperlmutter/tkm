@@ -76,61 +76,24 @@ pub enum Mode {
 }
 
 #[derive(PartialEq, Debug, Clone, Copy)]
-pub enum CmdError {
+pub enum CmdError<'a> {
     InvalidArgs(u32, u32),
-    InvalidCmd,
+    InvalidCmd(&'a str),
     ParseErr
 }
 
-impl From<u32> for CmdError {
+impl<'a> From<u32> for CmdError<'a> {
     fn from(i: u32) -> Self {
-        match i {
-            1000 => CmdError::InvalidArgs(0, 0),
-            1001 => CmdError::InvalidCmd,
-            _ | 1002 => CmdError::ParseErr
-        }
+        CmdError::ParseErr
     }
 }
 
-impl CmdError {
+impl<'a> CmdError<'a> {
     pub fn display(&self) -> String {
         match self {
             CmdError::InvalidArgs(exp, rec) => format!("Wrong number of arguments: expected {}, found {}", exp, rec),
-            CmdError::InvalidCmd => format!("Unknown command"),
+            CmdError::InvalidCmd(cmd) => format!("Command not found: {}", cmd),
             CmdError::ParseErr => format!("Error during parsing")
         }
     }
 }
-// error_chain!{
-
-//     foreign_links {
-//         Nom(::nom::Err);
-//     }
-
-//     types {
-//         InvalidArgs, InvalidCmd, ParseErr;
-//     }
-
-//     errors {
-//         InvalidArgs(expected: u32, found: u32) {
-//             description("Invalid number of arguments")
-//             display("Wrong number of arguments: expected {}, found {}", expected, found)
-//         }
-
-//         InvalidCmd(cmd: String) {
-//             description("Invalid command")
-//             display("Invalid command: {}", cmd)
-//         }
-
-//         ParseErr(err: String) {
-//             description("An error occurred while parsing")
-//             display("Parsing error: {}", err)
-//         }
-//     }
-// }
-
-// impl From<CmdError> for ErrorKind {
-//     fn from(err: CmdError) -> Self {
-//         ErrorKind::
-//     }
-// }

@@ -102,28 +102,18 @@ fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
             match input {
 
                 // Quit the program
-                Key::Ctrl('c') => {
-                    break;
-                }
+                Key::Ctrl('c') => break,
 
                 // Toggle showing the debugging log
-                Key::Char('/') => {
-                    app.processes_sort_by = SortBy::CPU;
-                    app.console.toggle_visibility();
-                }
+                Key::Char('/') => app.console.toggle_visibility(),
+
+                // If enter was pressed, attempt to process current input as command
+                Key::Char('\n') => app.process_command(),
 
                 // Capture text input into the console
-                Key::Char(c) => {
-                    app.console.append_input(c);
-                    // If enter was pressed, attempt to process current input as command
-                    if c == '\n' {
-                        app.process_command();
-                    }
-                }
+                Key::Char(c) => app.console.append_input(c),
 
-                Key::Backspace => {
-                    app.console.backspace();
-                }
+                Key::Backspace => app.console.backspace(),
 
                 _ => {}
             }

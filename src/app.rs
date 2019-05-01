@@ -37,20 +37,16 @@ impl App {
     pub fn process_command(&mut self) {
         let input = self.console.clear_input();
 
-        match handle_cmd(input.as_bytes()) {
-            Ok((_, cmd)) => {
-                self.console.write(format!("{:?}", cmd));
-            }
-            Err(e) => {
-                match e {
-                    nom::Err::Failure(err) | nom::Err::Error(err) => {
-                        if let nom::Context::Code(_, nom::ErrorKind::Custom(cmd_err)) = err {
-                            self.console.write(cmd_err.display());
-                        }
-                    }
-                    _ => {}
+        match handle_cmd(nom::types::CompleteStr(&input)) {
+            Ok((_, cmd)) => self.console.write(format!("{:?}", cmd)),
+            Err(nom::Err::Error(e)) | Err(nom::Err::Failure(e)) => {
+                if let nom::Context::Code(_, nom::ErrorKind::Custom(cmd_err)) = e {
+                    self.console.write(cmd_err.display());
+                } else {
+                    self.console.write(CmdError::ParseErr.display());
                 }
             }
+            _ => {}
         }
     }
 }

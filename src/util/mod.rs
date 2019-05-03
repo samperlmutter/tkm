@@ -29,26 +29,22 @@ impl<'a> TabsState<'a> {
 // Macro to sort the list of processes by a variable field and format each process to be displayed
 #[macro_export]
 macro_rules! sort_processes {
-    ($processes:expr, $struct:ident . $field:ident, $sort_order:expr) => {
-        {
-            let mut sorted: Vec<Process> = $processes.clone();
-            sorted.sort_by(|a, b| a.$field.partial_cmp(&b.$field).unwrap());
-            if let SortDirection::DESC = $sort_order {
-                sorted.reverse();
-            }
-
-            sorted.iter()
-                .map(|process| process.format())
-                .collect()
+    ($processes:expr, $struct:ident . $field:ident, $sort_order:expr) => {{
+        let mut sorted: Vec<Process> = $processes.clone();
+        sorted.sort_by(|a, b| a.$field.partial_cmp(&b.$field).unwrap());
+        if let SortDirection::DESC = $sort_order {
+            sorted.reverse();
         }
-    };
+
+        sorted.iter().map(|process| process.format()).collect()
+    }};
 }
 
 pub enum SortBy {
     PID,
     Name,
     CPU,
-    Memory
+    Memory,
 }
 
 impl FromStr for SortBy {
@@ -60,26 +56,28 @@ impl FromStr for SortBy {
             "name" => Ok(SortBy::Name),
             "cpu" => Ok(SortBy::CPU),
             "mem" => Ok(SortBy::Memory),
-            _ => Err(())
+            _ => Err(()),
         }
     }
 }
 
 pub enum SortDirection {
     ASC,
-    DESC
+    DESC,
 }
 
 pub enum Mode {
     Console,
-    Main
+    Main,
 }
 
 #[derive(PartialEq, Debug, Clone, Copy)]
 pub enum CmdError<'a> {
-    InvalidArgs(u32, u32),
+    IncorrectArgNum(u32, u32),
     InvalidCmd(&'a str),
-    ParseErr
+    InvalidArg(&'a str),
+    Err(&'a str),
+    ParseErr,
 }
 
 impl<'a> From<u32> for CmdError<'a> {
@@ -91,9 +89,13 @@ impl<'a> From<u32> for CmdError<'a> {
 impl<'a> CmdError<'a> {
     pub fn display(&self) -> String {
         match self {
-            CmdError::InvalidArgs(exp, rec) => format!("Wrong number of arguments: expected {}, found {}", exp, rec),
+            CmdError::IncorrectArgNum(exp, rec) => {
+                format!("Wrong number of arguments: expected {}, found {}", exp, rec)
+            }
             CmdError::InvalidCmd(cmd) => format!("Command not found: {}", cmd),
-            CmdError::ParseErr => format!("Error during parsing")
+            CmdError::InvalidArg(arg) => format!("Invalid argument: {}", arg),
+            CmdError::Err(err) => format!("Error: {}", err),
+            CmdError::ParseErr => format!("Error during parsing"),
         }
     }
 }

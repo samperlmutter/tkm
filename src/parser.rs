@@ -20,36 +20,30 @@ named!(parse_args<CompleteStr, Vec<CompleteStr>, CmdError>,
 // Parses the first word as the command and the remaining words as arguments, then runs the corresponding command
 pub fn handle_cmd(i: CompleteStr) -> nom::IResult<CompleteStr, Cmd, CmdError> {
     do_parse!(i,
-        cmd: add_return_error!(nom::ErrorKind::Custom(CmdError::InvalidCmd(i.0)),
+        cmd: add_return_error!(nom::ErrorKind::Custom(CmdError::InvalidCmd(i.0)), // Throws an InvalidCmd error if none of the switch cases t
                 fix_error!(CmdError,
                     switch!(fix_error!(CmdError, word),
                         CompleteStr("sort") => do_parse!(
-                            args: parse_args >> // Parses the remaining words as arguments
-                            // Returns the parsed command as a struct
-                            (Cmd {
-                                cmd: Action::Sort,
-                                args: args
-                            })
+                            (Action::Sort)
                         ) |
                         CompleteStr("kill") => do_parse!(
-                            args: parse_args >> // Parses the remaining words as arguments
-                            // Returns the parsed command as a struct
-                            (Cmd {
-                                cmd: Action::Kill,
-                                args: args
-                            })
+                            (Action::Kill)
                         )
                     )
                 )
         ) >>
-        (cmd)
+        args: parse_args >> // Parses the remaining words as arguments
+        (Cmd {
+            cmd,
+            args
+        })
     )
 }
 
 #[cfg(test)]
 mod test {
     use super::*;
-    use nom::Err::{Error, Failure};
+    use nom::Err::{Error};
 
     #[test]
     fn arg_test() {

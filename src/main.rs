@@ -82,7 +82,6 @@ fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
         };
 
         // Define layouts for the different sections of the display
-        // TODO: Make this a macro
         let main_view_layout = define_layout(Direction::Vertical, &main_view_constraints, terminal.size()?);
         let system_overview_layout = define_layout(Direction::Horizontal, &system_overview_constrants, main_view_layout[0]);
         let sparklines_layout = define_layout(Direction::Vertical, &sparklines_constraints, system_overview_layout[1]);

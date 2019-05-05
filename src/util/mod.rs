@@ -132,6 +132,10 @@ impl<'a> Cmd<'a> {
                 if self.args.len() != 1 {
                     return Err(CmdError::IncorrectArgNum(1, self.args.len() as u32));
                 }
+                match self.args[0].0.parse::<i32>() {
+                    Ok(pid) => app.system.kill_process(pid),
+                    Err(_) => return Err(CmdError::Err("Invalid PID"))
+                }
             }
         }
 

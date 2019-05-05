@@ -1,4 +1,4 @@
-use sysinfo::{SystemExt, ProcessorExt};
+use sysinfo::{SystemExt, ProcessorExt, ProcessExt};
 
 use crate::process::Process;
 
@@ -79,6 +79,12 @@ impl System {
             cpu_core_usages: self.cpu_core_usages.clone(),
             processes: self.processes.clone(),
             ..*self
+        }
+    }
+
+    pub fn kill_process(&mut self, pid: i32) {
+        if let Some(process) = self.sysinfo.get_process(pid) {
+            process.kill(sysinfo::Signal::Kill);
         }
     }
 }

@@ -105,9 +105,11 @@ impl<'a> Cmd<'a> {
     pub fn exec(&self, app: &mut crate::app::App) -> Result<(), CmdError> {
         match self.cmd {
             Action::Sort => {
+                // Make sure only 1 argument is supplied
                 if self.args.len() != 1 {
                     return Err(CmdError::IncorrectArgNum(1, self.args.len() as u32));
                 }
+                // Parse the first (and only) argument into a SortBy enum
                 match self.args[0].0.parse::<SortBy>() {
                     Ok(sort_by) => {
                         if app.processes_sort_by == sort_by {
@@ -121,10 +123,12 @@ impl<'a> Cmd<'a> {
                         }
                         app.processes_sort_by = sort_by;
                     }
+                    // If parsing failed, an invalid argument was supplied
                     Err(()) => return Err(CmdError::InvalidArg(self.args[0].0))
                 }
             }
             Action::Kill => {
+                // Make sure only 1 argument is supplied
                 if self.args.len() != 1 {
                     return Err(CmdError::IncorrectArgNum(1, self.args.len() as u32));
                 }
@@ -134,15 +138,3 @@ impl<'a> Cmd<'a> {
         Ok(())
     }
 }
-
-// impl FromStr for Action {
-//     type Err = CmdError<'static>;
-
-//     fn from_str(s: &str) -> Result<Self, Self::Err> {
-//         match s {
-//             "sort" => Ok(Action::Sort),
-//             "kill" => Ok(Action::Kill),
-//             _ => Err(CmdError::<'static>::InvalidCmd(s))
-//         }
-//     }
-// }

@@ -5,11 +5,8 @@ use tui::backend::Backend;
 use tui::terminal::Frame;
 use pretty_bytes::converter::convert;
 
-use crate::system::System;
-use crate::console::Console;
 use crate::app::App;
 use crate::util::*;
-use crate::process::Process;
 
 // Helper function to make creating layouts easier
 pub fn define_layout (direction: Direction, constraints: &[Constraint], location: Rect) -> Vec<Rect> {

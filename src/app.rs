@@ -3,7 +3,7 @@ use crate::console::Console;
 use crate::parser::*;
 use crate::System;
 
-// TODO: Add layouts to app
+// TODO: Add layouts to app to simplify render function signatures
 pub struct App {
     pub mode: Mode,
     pub processes_sort_by: SortBy,

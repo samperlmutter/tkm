@@ -1,6 +1,6 @@
 use crate::util::*;
 use crate::console::Console;
-use crate::command_handler::*;
+use crate::parser::*;
 use crate::System;
 
 // TODO: Add layouts to app

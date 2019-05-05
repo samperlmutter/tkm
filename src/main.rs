@@ -5,7 +5,7 @@ mod render;
 mod console;
 mod app;
 mod process;
-mod command_handler;
+mod parser;
 
 use std::io;
 use std::io::Write;

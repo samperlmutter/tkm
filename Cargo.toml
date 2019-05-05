@@ -1,6 +1,6 @@
 [package]
 name = "tkm"
-version = "0.8.0"
+version = "0.8.5"
 authors = ["Sam Perlmutter <sam.perlmutter227@gmail.com>"]
 edition = "2018"
 

@@ -26,20 +26,7 @@ impl<'a> TabsState<'a> {
     }
 }
 
-// Macro to sort the list of processes by a variable field and format each process to be displayed
-#[macro_export]
-macro_rules! sort_processes {
-    ($processes:expr, $struct:ident . $field:ident, $sort_order:expr) => {{
-        let mut sorted: Vec<Process> = $processes.clone();
-        sorted.sort_by(|a, b| a.$field.partial_cmp(&b.$field).unwrap());
-        if let SortDirection::DESC = $sort_order {
-            sorted.reverse();
-        }
-
-        sorted.iter().map(|process| process.format()).collect()
-    }};
-}
-
+#[derive(PartialEq, Debug, Clone, Copy)]
 pub enum SortBy {
     PID,
     Name,
@@ -61,11 +48,13 @@ impl FromStr for SortBy {
     }
 }
 
+#[derive(PartialEq, Debug, Clone, Copy)]
 pub enum SortDirection {
     ASC,
     DESC,
 }
 
+#[derive(PartialEq, Debug, Clone, Copy)]
 pub enum Mode {
     Console,
     Main,
@@ -99,3 +88,61 @@ impl<'a> CmdError<'a> {
         }
     }
 }
+
+#[derive(PartialEq, Debug, Clone, Copy)]
+pub enum Action {
+    Sort,
+    Kill
+}
+
+#[derive(PartialEq, Debug, Clone)]
+pub struct Cmd<'a> {
+    pub cmd: Action,
+    pub args: Vec<nom::types::CompleteStr<'a>>
+}
+
+impl<'a> Cmd<'a> {
+    pub fn exec(&self, app: &mut crate::app::App) -> Result<(), CmdError> {
+        match self.cmd {
+            Action::Sort => {
+                if self.args.len() != 1 {
+                    return Err(CmdError::IncorrectArgNum(1, self.args.len() as u32));
+                }
+                match self.args[0].0.parse::<SortBy>() {
+                    Ok(sort_by) => {
+                        if app.processes_sort_by == sort_by {
+                            app.processes_sort_direction = if app.processes_sort_direction == SortDirection::ASC {
+                                SortDirection::DESC
+                            } else {
+                                SortDirection::ASC
+                            };
+                        } else {
+                            app.processes_sort_direction = SortDirection::DESC;
+                        }
+                        app.processes_sort_by = sort_by;
+                    }
+                    Err(()) => return Err(CmdError::InvalidArg(self.args[0].0))
+                }
+            }
+            Action::Kill => {
+                if self.args.len() != 1 {
+                    return Err(CmdError::IncorrectArgNum(1, self.args.len() as u32));
+                }
+            }
+        }
+
+        Ok(())
+    }
+}
+
+// impl FromStr for Action {
+//     type Err = CmdError<'static>;
+
+//     fn from_str(s: &str) -> Result<Self, Self::Err> {
+//         match s {
+//             "sort" => Ok(Action::Sort),
+//             "kill" => Ok(Action::Kill),
+//             _ => Err(CmdError::<'static>::InvalidCmd(s))
+//         }
+//     }
+// }

@@ -37,10 +37,15 @@ fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
     let backend = TermionBackend::new(stdout);
     let mut terminal = Terminal::new(backend)?;
     let events = event::Events::new();
-
-    let mut app = App::new();
     let mut system = System::new(terminal.size()?.width);
-    let mut system_cache = System::new(terminal.size()?.width);
+    let mut app = App {
+        mode: Mode::Main,
+        processes_sort_by: SortBy::CPU,
+        processes_sort_direction: SortDirection::DESC,
+        size: tui::layout::Rect::new(0, 0, 0, 0),
+        console: crate::console::Console::new(),
+        system: System::new(terminal.size()?.width),
+    };
 
     // Sets up separate thread for polling system resources
     let (system_tx, system_rx) = mpsc::channel();
@@ -55,8 +60,9 @@ fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
     loop {
         app.size = terminal.size()?;
 
+        // Received updated system info from separate thread
         if let Ok(updated_system) = system_rx.try_recv() {
-            system_cache = updated_system;
+            app.system = updated_system;
         }
         // Defines the upper area containing the cpu cores and graphs. Horizontally ordered
         let system_overview_constrants = vec![Constraint::Percentage(50); 2];
@@ -65,7 +71,7 @@ fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
         let sparklines_constraints = vec![Constraint::Percentage(50); 2];
 
         // Creates as many constraints as there are cpu cores. Verically ordered
-        let mut cpu_core_contraints = vec![Constraint::Length(3); system_cache.cpu_num_cores];
+        let mut cpu_core_contraints = vec![Constraint::Length(3); app.system.cpu_num_cores];
         cpu_core_contraints.push(Constraint::Min(0));
 
         // Sets the height of the upper area to be tall enough for all the cpu cores and resizes the main view to make room for the console if it's showing. Verically ordered
@@ -83,11 +89,11 @@ fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
         let cpu_cores_layout = define_layout(Direction::Vertical, &cpu_core_contraints, system_overview_layout[0]);
 
         terminal.draw(|mut f| {
-            render_sparklines_layout(&mut f, &sparklines_layout, &system_cache);
-            render_cpu_cores_layout(&mut f, &cpu_cores_layout, &system_cache);
-            render_processes_layout(&mut f, main_view_layout[1], &system_cache, &app);
-            render_console_layout(&mut f, main_view_layout[2], &app.console);
-            render_input_layout(&mut f, main_view_layout[3], &app.console.input);
+            render_sparklines_layout(&mut f, &sparklines_layout, &app);
+            render_cpu_cores_layout(&mut f, &cpu_cores_layout, &app);
+            render_processes_layout(&mut f, main_view_layout[1], &app);
+            render_console_layout(&mut f, main_view_layout[2], &app);
+            render_input_layout(&mut f, main_view_layout[3], &app);
         })?;
 
         // Positions cursor after user input

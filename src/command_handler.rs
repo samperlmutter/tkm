@@ -1,12 +1,6 @@
 use nom::types::CompleteStr;
 
-use crate::util::CmdError;
-
-#[derive(PartialEq, Debug, Clone)]
-pub struct Cmd<'a> {
-    cmd: String,
-    args: Vec<CompleteStr<'a>>
-}
+use crate::util::{Cmd, CmdError, Action};
 
 // Tokenize a word, ignoring whitespace
 named!(pub word<CompleteStr, CompleteStr>,
@@ -31,33 +25,17 @@ pub fn handle_cmd(i: CompleteStr) -> nom::IResult<CompleteStr, Cmd, CmdError> {
                     switch!(fix_error!(CmdError, word),
                         CompleteStr("sort") => do_parse!(
                             args: parse_args >> // Parses the remaining words as arguments
-                            return_error!(
-                                nom::ErrorKind::Custom(CmdError::IncorrectArgNum(1, args.len() as u32)),
-                                fix_error!(CmdError,
-                                    cond_reduce!(args.len() == 1 as usize, // Calls the sort function if there's exactly 1 argument. Otherwise throws an error
-                                        call!(sort)
-                                    )
-                                )
-                            ) >>
                             // Returns the parsed command as a struct
                             (Cmd {
-                                cmd: "sort".to_string(),
+                                cmd: Action::Sort,
                                 args: args
                             })
                         ) |
                         CompleteStr("kill") => do_parse!(
                             args: parse_args >> // Parses the remaining words as arguments
-                            return_error!(
-                                nom::ErrorKind::Custom(CmdError::IncorrectArgNum(1, args.len() as u32)),
-                                fix_error!(CmdError,
-                                    cond_reduce!(args.len() == 1 as usize, // Calls the sort function if there's exactly 1 argument. Otherwise throws an error
-                                        call!(kill)
-                                    )
-                                )
-                            ) >>
                             // Returns the parsed command as a struct
                             (Cmd {
-                                cmd: "kill".to_string(),
+                                cmd: Action::Kill,
                                 args: args
                             })
                         )
@@ -66,20 +44,6 @@ pub fn handle_cmd(i: CompleteStr) -> nom::IResult<CompleteStr, Cmd, CmdError> {
         ) >>
         (cmd)
     )
-}
-
-// Sorts the list of processes by the specified column
-fn sort(i: CompleteStr) -> nom::IResult<CompleteStr, String, CmdError> {
-    // TODO: Implement
-    Ok((i, "Success".to_string()))
-    // Err(Error(error_position!(i, nom::ErrorKind::Custom(CmdError::IncorrectArgNum))))
-}
-
-// Kills the specified process
-fn kill(i: CompleteStr) -> nom::IResult<CompleteStr, String, CmdError> {
-    // TODO: Implement
-    Ok((i, "Success".to_string()))
-    // Err(Error(error_position!(i, nom::ErrorKind::Custom(CmdError::IncorrectArgNum))))
 }
 
 #[cfg(test)]
@@ -120,26 +84,43 @@ mod test {
     #[test]
     fn handle_cmd_test() {
         assert_eq!(handle_cmd(CompleteStr("sort pid")), Ok((CompleteStr(""), Cmd {
-            cmd: "sort".to_string(),
+            cmd: Action::Sort,
             args: vec![CompleteStr("pid")]
         })));
 
         assert_eq!(handle_cmd(CompleteStr("kill 123")), Ok((CompleteStr(""), Cmd {
-            cmd: "kill".to_string(),
+            cmd: Action::Kill,
             args: vec![CompleteStr("123")]
         })));
 
         assert_eq!(handle_cmd(CompleteStr("kill        123")), Ok((CompleteStr(""), Cmd {
-            cmd: "kill".to_string(),
+            cmd: Action::Kill,
             args: vec![CompleteStr("123")]
         })));
 
-        assert_eq!(handle_cmd(CompleteStr("sort pid pid")), Err(Failure(error_position!(CompleteStr(""), nom::ErrorKind::Custom(CmdError::IncorrectArgNum(1, 2))))));
-        assert_eq!(handle_cmd(CompleteStr("sort pid    pid")), Err(Failure(error_position!(CompleteStr(""), nom::ErrorKind::Custom(CmdError::IncorrectArgNum(1, 2))))));
-        assert_eq!(handle_cmd(CompleteStr("kill    123 456")), Err(Failure(error_position!(CompleteStr(""), nom::ErrorKind::Custom(CmdError::IncorrectArgNum(1, 2))))));
+        assert_eq!(handle_cmd(CompleteStr("sort pid pid")), Ok((CompleteStr(""), Cmd {
+            cmd: Action::Sort,
+            args: vec![CompleteStr("pid"), CompleteStr("pid")]
+        })));
 
-        assert_eq!(handle_cmd(CompleteStr("sort  ")), Err(Failure(error_position!(CompleteStr(""), nom::ErrorKind::Custom(CmdError::IncorrectArgNum(1, 0))))));
-        assert_eq!(handle_cmd(CompleteStr("kill  ")), Err(Failure(error_position!(CompleteStr(""), nom::ErrorKind::Custom(CmdError::IncorrectArgNum(1, 0))))));
+        assert_eq!(handle_cmd(CompleteStr("sort pid    pid")), Ok((CompleteStr(""), Cmd {
+            cmd: Action::Sort,
+            args: vec![CompleteStr("pid"), CompleteStr("pid")]
+        })));
+
+        assert_eq!(handle_cmd(CompleteStr("kill    123 456")), Ok((CompleteStr(""), Cmd {
+            cmd: Action::Kill,
+            args: vec![CompleteStr("123"), CompleteStr("456")]
+        })));
+
+        assert_eq!(handle_cmd(CompleteStr("sort  ")), Ok((CompleteStr(""), Cmd {
+            cmd: Action::Sort,
+            args: vec![]
+        })));
+        assert_eq!(handle_cmd(CompleteStr("kill  ")), Ok((CompleteStr(""), Cmd {
+            cmd: Action::Kill,
+            args: vec![]
+        })));
 
         assert_eq!(handle_cmd(CompleteStr("fail")), Err(Error(error_position!(CompleteStr("fail"), nom::ErrorKind::Custom(CmdError::InvalidCmd("fail"))))));
         assert_eq!(handle_cmd(CompleteStr("sortpid")), Err(Error(error_position!(CompleteStr("sortpid"), nom::ErrorKind::Custom(CmdError::InvalidCmd("sortpid"))))));

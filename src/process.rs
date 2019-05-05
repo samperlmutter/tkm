@@ -1,6 +1,6 @@
 use sysinfo::ProcessExt;
 
-#[derive(Clone)]
+#[derive(PartialEq, Clone)]
 pub struct Process {
     pub pid: i32,
     pub name: String,

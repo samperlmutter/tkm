@@ -46,6 +46,7 @@ fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
         size: tui::layout::Rect::new(0, 0, 0, 0),
         console: crate::console::Console::new(),
         system: System::new(terminal.size()?.width),
+        should_render: true
     };
 
     // Sets up separate thread for polling system resources
@@ -54,7 +55,7 @@ fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
         loop {
             let system_update = system.update();
             system_tx.send(system_update).unwrap();
-            thread::sleep(Duration::from_secs(1));
+            thread::sleep(Duration::from_millis(2500));
         }
     });
 
@@ -64,38 +65,45 @@ fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
         // Received updated system info from separate thread
         if let Ok(updated_system) = system_rx.try_recv() {
             app.system = updated_system;
+            app.should_render = true;
         }
-        // Defines the upper area containing the cpu cores and graphs. Horizontally ordered
-        let system_overview_constrants = vec![Constraint::Percentage(50); 2];
 
-        // Defines areas for the cpu and memory graphs. Verically ordered
-        let sparklines_constraints = vec![Constraint::Percentage(50); 2];
+        // Renders everything lazily to increase performance
+        if app.should_render {
+            // Defines the upper area containing the cpu cores and graphs. Horizontally ordered
+            let system_overview_constrants = vec![Constraint::Percentage(50); 2];
 
-        // Creates as many constraints as there are cpu cores. Verically ordered
-        let mut cpu_core_contraints = vec![Constraint::Length(3); app.system.cpu_num_cores];
-        cpu_core_contraints.push(Constraint::Min(0));
+            // Defines areas for the cpu and memory graphs. Verically ordered
+            let sparklines_constraints = vec![Constraint::Percentage(50); 2];
 
-        // Sets the height of the upper area to be tall enough for all the cpu cores and resizes the main view to make room for the console if it's showing. Verically ordered
-        let main_view_constraints = if app.console.visible {
-            vec![Constraint::Length(((cpu_core_contraints.len() - 1) * 3) as u16), Constraint::Min(0), Constraint::Percentage(20), Constraint::Length(3)]
-        } else {
-            vec![Constraint::Length(((cpu_core_contraints.len() - 1) * 3) as u16), Constraint::Min(0), Constraint::Percentage(0), Constraint::Length(3)]
-        };
+            // Creates as many constraints as there are cpu cores. Verically ordered
+            let mut cpu_core_contraints = vec![Constraint::Length(3); app.system.cpu_num_cores];
+            cpu_core_contraints.push(Constraint::Min(0));
 
-        // Define layouts for the different sections of the display
-        let main_view_layout = define_layout(Direction::Vertical, &main_view_constraints, terminal.size()?);
-        let system_overview_layout = define_layout(Direction::Horizontal, &system_overview_constrants, main_view_layout[0]);
-        let sparklines_layout = define_layout(Direction::Vertical, &sparklines_constraints, system_overview_layout[1]);
-        let cpu_cores_layout = define_layout(Direction::Vertical, &cpu_core_contraints, system_overview_layout[0]);
+            // Sets the height of the upper area to be tall enough for all the cpu cores and resizes the main view to make room for the console if it's showing. Verically ordered
+            let main_view_constraints = if app.console.visible {
+                vec![Constraint::Length(((cpu_core_contraints.len() - 1) * 3) as u16), Constraint::Min(0), Constraint::Percentage(20), Constraint::Length(3)]
+            } else {
+                vec![Constraint::Length(((cpu_core_contraints.len() - 1) * 3) as u16), Constraint::Min(0), Constraint::Percentage(0), Constraint::Length(3)]
+            };
 
-        // TODO: Implement lazy rendering
-        terminal.draw(|mut f| {
-            render_sparklines_layout(&mut f, &sparklines_layout, &app);
-            render_cpu_cores_layout(&mut f, &cpu_cores_layout, &app);
-            render_processes_layout(&mut f, main_view_layout[1], &app);
-            render_console_layout(&mut f, main_view_layout[2], &app);
-            render_input_layout(&mut f, main_view_layout[3], &app);
-        })?;
+            // Define layouts for the different sections of the display
+            let main_view_layout = define_layout(Direction::Vertical, &main_view_constraints, terminal.size()?);
+            let system_overview_layout = define_layout(Direction::Horizontal, &system_overview_constrants, main_view_layout[0]);
+            let sparklines_layout = define_layout(Direction::Vertical, &sparklines_constraints, system_overview_layout[1]);
+            let cpu_cores_layout = define_layout(Direction::Vertical, &cpu_core_contraints, system_overview_layout[0]);
+
+            // TODO: Implement lazy rendering
+            terminal.draw(|mut f| {
+                render_sparklines_layout(&mut f, &sparklines_layout, &app);
+                render_cpu_cores_layout(&mut f, &cpu_cores_layout, &app);
+                render_processes_layout(&mut f, main_view_layout[1], &app);
+                render_console_layout(&mut f, main_view_layout[2], &app);
+                render_input_layout(&mut f, main_view_layout[3], &app);
+            })?;
+
+            app.should_render = false;
+        }
 
         // Positions cursor after user input
         write!(
@@ -124,6 +132,8 @@ fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
 
                 _ => {}
             }
+
+            app.should_render = true;
         }
         terminal.hide_cursor()?;
     }

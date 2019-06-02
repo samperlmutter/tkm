@@ -10,7 +10,8 @@ pub struct App {
     pub processes_sort_direction: SortDirection,
     pub size: tui::layout::Rect,
     pub console: Console,
-    pub system: System
+    pub system: System,
+    pub should_render: bool,
 }
 
 impl App {

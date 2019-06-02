@@ -89,6 +89,7 @@ impl<'a> CmdError<'a> {
     }
 }
 
+// TODO: Add quit and help commands
 #[derive(PartialEq, Debug, Clone, Copy)]
 pub enum Action {
     Sort,

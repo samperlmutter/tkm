@@ -87,6 +87,7 @@ fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
         let sparklines_layout = define_layout(Direction::Vertical, &sparklines_constraints, system_overview_layout[1]);
         let cpu_cores_layout = define_layout(Direction::Vertical, &cpu_core_contraints, system_overview_layout[0]);
 
+        // TODO: Implement lazy rendering
         terminal.draw(|mut f| {
             render_sparklines_layout(&mut f, &sparklines_layout, &app);
             render_cpu_cores_layout(&mut f, &cpu_cores_layout, &app);

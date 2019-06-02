@@ -99,6 +99,7 @@ pub fn render_processes_layout<B> (f: &mut Frame<B>, layout: Rect, app: &App)
         Row::Data(process.iter())
     );
 
+    // TODO: Show visual indication of sort direction
     Table::new(headers.iter(), rows)
         .block(Block::default().borders(Borders::ALL).title("Processes"))
         .widths(&[6, 25, 6, 9])
@@ -106,6 +107,7 @@ pub fn render_processes_layout<B> (f: &mut Frame<B>, layout: Rect, app: &App)
         .render(f, layout);
 }
 
+// TODO: Show visual indication of invalid command
 pub fn render_input_layout<B> (f: &mut Frame<B>, layout: Rect, app: &App)
     where B: Backend {
     Paragraph::new([Text::raw(&app.console.input)].iter())

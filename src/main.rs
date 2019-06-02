@@ -6,6 +6,7 @@ mod console;
 mod app;
 mod process;
 mod parser;
+mod cmd;
 
 use std::io;
 use std::io::Write;
@@ -36,7 +37,7 @@ fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
     let stdout = AlternateScreen::from(stdout);
     let backend = TermionBackend::new(stdout);
     let mut terminal = Terminal::new(backend)?;
-    let events = event::Events::new();
+    let events = util::Events::new();
     let mut system = System::new(terminal.size()?.width);
     let mut app = App {
         mode: Mode::Main,
@@ -104,7 +105,7 @@ fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
         )?;
 
         terminal.show_cursor()?;
-        if let event::Event::Input(input) = events.next()? {
+        if let util::Event::Input(input) = events.next()? {
             match input {
 
                 // Quit the program

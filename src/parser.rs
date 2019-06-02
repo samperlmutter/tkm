@@ -1,6 +1,6 @@
 use nom::types::CompleteStr;
 
-use crate::util::{Cmd, CmdError, Action};
+use crate::cmd::{Cmd, CmdError, Action};
 
 // Tokenize a word, ignoring whitespace
 named!(pub word<CompleteStr, CompleteStr>,

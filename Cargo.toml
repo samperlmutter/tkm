@@ -1,8 +1,10 @@
 [package]
 name = "tkm"
+description = "A terminal based task manager."
 version = "0.8.5"
 authors = ["Sam Perlmutter <sam.perlmutter227@gmail.com>"]
 edition = "2018"
+repository = "https://github.com/samperlmutter/tkm"
 
 [dependencies]
 tui = "0.4.0"
